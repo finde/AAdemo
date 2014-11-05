@@ -1,52 +1,68 @@
 <div id="content" ng-controller='GameController as ctrl'>
   <!-- heading -->
   <div id="heading" class="row">
-    <h1 class="title">ng-2048</h1>
-    <div class="scores-container">
-      <div class="score-container">{{ctrl.game.currentScore}}</div>
-      <div class="best-container">{{ctrl.game.highScore}}</div>
-    </div>
+    <h1 class="title">Single Agent Planning</h1>
   </div>
 
-  <!-- instructions -->
-  <div id="instructions" class="row">
-    Join the numbers and get to the <strong>2048</strong> tile!
-    <button ng-click='ctrl.newGame()' class="restart-button">New game</button>
+  <!-- settings -->
+  <div id="settings" class="row">
+	  <div class="row" style="margin-bottom: 10px">
+
+		  <div class="col-xs-4">
+			  <div class="worldSize-container">
+				  <input type="number" class="form-control" min="2" max="30" placeholder="11" ng-model="ctrl.settings.worldSize">
+		    </div>
+		  </div>
+
+		  <div class="col-xs-4">
+			  <div class="predatorLocation-container">
+				  <input type="text" class="form-control" placeholder="0,0" ng-model="ctrl.settings.predatorInitLocation">
+		    </div>
+	  	</div>
+
+		  <div class="col-xs-4">
+			  <div class="preyLocation-container">
+				  <input type="text" class="form-control" placeholder="{{ctrl.settings.worldSize-1}},{{ctrl.settings.worldSize-1}}" ng-model="ctrl.settings.preyInitLocation">
+			  </div>
+		  </div>
+	  </div>
+
+	  <div class="row">
+		  <div class="col-xs-6"  style="margin-bottom: 10px">
+			  <button ng-click='ctrl.simulate(100)' ng-disabled="ctrl.game.win" class="btn restart-button">
+				  Run 100 times
+				  <small ng-if="ctrl.settings.stats">
+				  [
+					  {{ctrl.settings.stats.message}}
+					  Mean: {{ctrl.settings.stats.mean | number: 2}},
+					  StdDev: {{ctrl.settings.stats.standardDev | number: 2}}
+				  ]
+			    </small>
+			  </button>
+		  </div>
+		  <div class="col-xs-6 text-right"  style="margin-bottom: 10px">
+			  <button ng-click='ctrl.stepOnce()' ng-disabled="ctrl.game.win" class="btn restart-button">StepOnce</button>
+    		<button ng-click='ctrl.newGame()' class="btn restart-button">Reset</button>
+		  </div>
+		</div>
+
+	  <div class="col-xs-12">
+		  <input type="range" ng-model="ctrl.settings.currentStep" min="0" max="{{ctrl.settings.finalStep}}" ng-change="ctrl.previewStep()">
+
+	  </div>
   </div>
-  
+
   <div id="game-container">
     <div grid ng-model='ctrl.game' class="row"></div>
 
-    <div id="game-over" ng-if="ctrl.game.gameOver" class="row game-overlay">
-      Game over
-
-      <div class="lower">
-        <a class="retry-button" ng-click='ctrl.newGame()'>Try again</a>
-      </div>
-    </div>
-
     <div id="win" ng-if="ctrl.game.win" class="row game-overlay">
-      You win!
+      Nom nom nom! <br/>
+      ({{ctrl.game.steps}} steps)
 
       <div class="lower">
         <a class="retry-button" ng-click='ctrl.newGame()'>Try again</a>
       </div>
     </div>
   </div>
-
-  <p class="game-explanation">
-    <strong class="important">How to play:</strong> Use your <strong>arrow keys</strong> to move the tiles. When two tiles with the same number touch, they <strong>merge into one!</strong>
-  </p>
-  <hr>
-
-  <p>
-    <strong class="important">NOTE:</strong> This game was written using AngularJS.
-  </p>
-
-  <hr>
-
-  <p>
-    Created by <a href="http://fullstackedu.com">Fullstack.io</a> based on 2048 by <a href="http://gabrielecirulli.com" target="_blank">Gabriele Cirulli.</a> Based on <a href="https://itunes.apple.com/us/app/1024!/id823499224" target="_blank">1024 by Veewo Studio</a> and conceptually similar to <a href="http://asherv.com/threes/" target="_blank">Threes by Asher Vollmer.</a>
-  </p>
 
 </div>

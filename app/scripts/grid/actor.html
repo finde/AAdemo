@@ -1,0 +1,8 @@
+<div class="tile"
+     ng-class="{'predator':'tile-4','prey':'tile-2'}[actorRole]">
+	<div class="tile-inner" ng-class="{'true':'no-lineheight'}[worldSize>11]">
+		<img src="/images/nekocat.gif" ng-if="actorRole == 'predator'" class="actor">
+
+		<img src="/images/mouse.gif" ng-if="actorRole == 'prey'" class="actor">
+	</div>
+</div>
