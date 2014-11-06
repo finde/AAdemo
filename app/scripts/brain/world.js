@@ -94,6 +94,8 @@ var World = function () {
       return a.x === b.x && a.y === b.y;
     };
 
+    this.isSamePosition = isSamePositions;
+
     this.spawnPredator = function (state) {
       var _predator = new Agent(world, {
         state: state,
