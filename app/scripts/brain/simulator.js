@@ -39,9 +39,8 @@ var Simulator = function (nTimes, opt, callbackFn) {
   return stats;
 };
 
-var generateID = function (predator, prey) {
-  return [predator.x, predator.y, prey.x, prey.y].join('_');
-};
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 var StateSpace = function (size, value) {
   var world = new World();
@@ -78,15 +77,127 @@ var StateSpace = function (size, value) {
   return _stateSpace;
 };
 
-var valueIteration = function () {
+/**
+ * toroidalConvertion
+ * @param i
+ * @param middle
+ * @returns {*}
+ */
+var toroidalConvertion = function (i, middle, worldSize) {
+  if (i > middle) {
+    i -= worldSize;
+  }
+
+  if (i < -1 * middle) {
+    i += worldSize;
+  }
+
+  return i;
+};
+
+/***
+ * relative distance encoder
+ * @param predatorCoord
+ * @param preyCoord
+ * @returns {string}
+ */
+var encodeRelativeDistance = function (predatorCoord, preyCoord, worldSize) {
+  // target - start location
+  var x = predatorCoord.x - preyCoord.x;
+  var y = predatorCoord.y - preyCoord.y;
+
+  return [ toroidalConvertion(x, worldSize / 2, worldSize), toroidalConvertion(y, worldSize / 2, worldSize)].join('_');
+};
+
+/***
+ * Optimized State Space, with assumption environment / world is toroidal without boundaries / blocks
+ * @param size
+ * @param value
+ * @constructor
+ */
+var OptimizedStateSpace = function (size, value) {
+  var world = new World();
+  world.setSize(size);
+
+  var worldSize = world.getSize();
+
+  var _predatorStates = [];
+  var _preyStates = [];
+  var _stateSpace = {};
+
+  // define individual stateSpace
+  for (var x = 0; x < worldSize; x++) {
+    for (var y = 0; y < worldSize; y++) {
+      _predatorStates.push({x: x, y: y});
+      _preyStates.push({x: x, y: y});
+    }
+  }
+
+  // combination state
+  for (var i = 0; i < _predatorStates.length; i++) {
+    for (var j = 0; j < _preyStates.length; j++) {
+
+      // encode relative distance
+      var id = encodeRelativeDistance(_predatorStates[i], _preyStates[j], worldSize);
+
+      // we do not need to check if it exist, but instead always overwrite, because it is the same
+      _stateSpace[id] = {
+        id: id,
+        coord: {
+          x: id.split('_')[0] * 1.0,
+          y: id.split('_')[1] * 1.0
+        },
+        value: value
+      };
+
+    }
+  }
+
+  return _stateSpace;
+};
+
+/***
+ * transition function based on relative distance
+ * @param currentState
+ * @param actor : 'prey' or 'predator'
+ * @param action
+ * @param worldSize
+ */
+var transitionFunction = function (currentState, actor, action, worldSize) {
+
+  var x, y;
+
+  if (actor === 'prey') {
+    x = currentState.x + action.transition.x;
+    y = currentState.y + action.transition.y;
+  } else { // predator
+    x = currentState.x - action.transition.x;
+    y = currentState.y - action.transition.y;
+  }
+
+  return [ toroidalConvertion(x, worldSize / 2, worldSize), toroidalConvertion(y, worldSize / 2, worldSize)].join('_');
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+var valueIteration = function (gamma, theta) {
 
   var world = new World();
   world.setSize(11);
 
-  var stateSpace = new StateSpace(11, 0);
+  var worldSize = world.getSize();
+  var stateSpace = new OptimizedStateSpace(11, 0);
 
-  var theta = 0.5;
-  var gamma = 0.1;
+  if (!gamma) {
+    gamma = 0.1;
+  }
+
+  if (!theta) {
+    theta = 0.001;
+  }
+
+  console.log('valueIteration== gamma:', gamma, 'theta:', theta);
 
   // for each state in stateSpace
   var predatorActions = [
@@ -117,90 +228,103 @@ var valueIteration = function () {
     var delta = 0;
 
     // for each state
-    for (var i = 0; i < stateSpace.length; i++) {
-
-      var temp = _.clone(stateSpace[i]);
+    _.forEach(stateSpace, function (state) {
+      var temp = _.clone(state);
 
       // if the current state is terminal state, then ignored
-      if (world.isSamePosition(temp.predator, temp.prey)) {
-//        actionValues.push(0);
-        continue;
-      }
+      if (state.id !== '0_0') {
 
-      var actionValues = [];
-      var feedbackPredator, feedbackPrey;
+        var actionValues = [];
+        var feedbackPredator, feedbackPrey;
 
-      // for each actions
-      for (var r = 0; r < predatorActions.length; r++) {
+        // for each actions
+        // -- predator action
+        for (var r = 0; r < predatorActions.length; r++) {
 
-        // find final destination s->s'
-        var predatorAction = predatorActions[r];
-        feedbackPredator = world.giveFeedback(temp.predator, predatorAction);
+          // reset partialSum
+          var partialSum = 0;
 
-        // if predator and prey are side by side and predator will catch the prey, which resulting maxReward
-        if (world.isSamePosition(feedbackPredator.state, temp.prey)) {
-          actionValues.push(world.maxReward);
-          continue;
-        }
+          // find final destination s->s'
+          var predatorAction = predatorActions[r];
+          feedbackPredator = transitionFunction(temp.coord, 'predator', predatorAction, worldSize);
 
-        // if after predator move, the predator is adj. to the prey, change the probability
-        var preyLegalActions = [];
-        for (var j = 0; j < preyActions.length; j++) {
-
-          //if this is legal then add to the list
-          feedbackPrey = world.giveFeedback(temp.prey, preyActions[j]);
-          if (!world.isSamePosition(feedbackPrey.state, feedbackPredator.state)) {
-            preyLegalActions.push(preyActions[j]);
-          }
-
-        }
-        // set probability of each action;
-        if (preyLegalActions.length < 5) {
-
-          // preyLegalActions[0].action must always be "stay"
-          for (var j = 1; j < preyLegalActions.length; j++) {
-            preyLegalActions[j].probability = (1 - preyLegalActions[0].probability) / (preyLegalActions.length - 1);
-          }
-        }
-
-        // for predator action which cannot catch the prey, and not terminal
-        for (var y = 0; y < preyLegalActions.length; y++) {
-          var preyAction = preyLegalActions[y];
-          feedbackPrey = world.giveFeedback(temp.prey, preyAction);
-
-          //if prey suicide
-          // final position for predator and prey are the same, but prey moved
-          if (world.isSamePosition(feedbackPredator.state, feedbackPrey.state) && !world.isSamePosition(temp.prey, feedbackPrey.state)) {
+          // if predator and prey are side by side and predator will catch the prey, which resulting maxReward
+          if (feedbackPredator === '0_0') {
+            actionValues.push(world.maxReward);
             continue;
           }
 
-          var immediate_reward = 0; // remember to change
-          if (world.isSamePosition(feedbackPredator.state, feedbackPrey.state)) {
-            immediate_reward = world.maxReward;
+          var feedbackPredatorCoord = {
+            x: feedbackPredator.split('_')[0] * 1.0,
+            y: feedbackPredator.split('_')[1] * 1.0
+          };
+
+          // find legal actions for prey
+          // -- prey action
+          var preyLegalActions = [];
+          for (var j = 0; j < preyActions.length; j++) {
+
+            //if this is legal then add to the list
+            if (transitionFunction(feedbackPredatorCoord, 'prey', preyActions[j], worldSize) !== '0_0') {
+              preyLegalActions.push(preyActions[j]);
+            }
+
+            // set probability of each action;
+            if (preyLegalActions.length < 5) {
+              // preyLegalActions[0].action must always be "stay"
+              for (var k = 1; k < preyLegalActions.length; k++) {
+                preyLegalActions[k].probability = (1 - preyLegalActions[0].probability) / (preyLegalActions.length - 1);
+              }
+            }
           }
 
-          // if allowed
-          if (feedbackPredator && feedbackPrey) {
-            var destinationIndex = generateID(feedbackPredator.state, feedbackPrey.state);
+          // for predator action which cannot catch the prey, and not terminal
+          for (var y = 0; y < preyLegalActions.length; y++) {
+            var preyAction = preyLegalActions[y];
+            feedbackPrey = transitionFunction(feedbackPredatorCoord, 'prey', preyAction, worldSize);
 
-            var vDestination = _.findWhere(stateSpace, {id: destinationIndex});
+            var immediate_reward = 0; // remember to change
+            if (feedbackPrey === '0_0') {
+              immediate_reward = world.maxReward;
+            }
 
-            actionValues.push(preyAction.probability * (immediate_reward + gamma * vDestination.value));
-          }
+            // if allowed
+            var vDestination = _.findWhere(stateSpace, {id: feedbackPrey});
 
-        }
+            partialSum += preyAction.probability * (immediate_reward + gamma * vDestination.value);
+          } // foreach prey action
+
+          actionValues.push(partialSum);
+        } // foreach predator action
+
+        var currentState = _.find(stateSpace, {id: temp.id});
+
+        currentState.actionValues = actionValues;
+        currentState.value = numbers.basic.max(actionValues);
+
+        delta = numbers.basic.max([delta, Math.abs(temp.value - currentState.value)]);
       }
 
-      stateSpace[i].value = numbers.basic.max(actionValues);
-      delta = numbers.basic.max([delta, Math.abs(temp.value - stateSpace[i].value)]);
-
-      console.log(i);
-    }
+    });
 
     iteration++;
-    console.log('delta >>>',iteration, delta)
+    console.log('delta >>>', iteration, delta);
   } while (delta >= theta);
 
-  console.log(iteration);
-  return stateSpace;
+
+  // after converge, calculate policy for each state
+  var policy = {};
+
+  _.each(stateSpace, function (state) {
+
+    if (state.id !== '0_0') {
+      // argmax a from value iteration
+      var maxValue = numbers.basic.max(state.actionValues);
+      var actionIndex = _.indexOf(state.actionValues, maxValue);
+
+      policy[state.id] = predatorActions[actionIndex];
+    }
+  });
+
+  return {stateSpace: stateSpace, policy: policy};
 };
