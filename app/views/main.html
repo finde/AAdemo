@@ -29,7 +29,7 @@
 
 	  <div class="row">
 		  <div class="col-xs-6"  style="margin-bottom: 10px">
-			  <button ng-click='ctrl.simulate(100)' ng-disabled="ctrl.game.win" class="btn restart-button">
+			  <button ng-click='ctrl.simulateRandomPolicy(100)' ng-disabled="ctrl.game.win" class="btn restart-button">
 				  Run 100 times
 				  <small ng-if="ctrl.settings.stats">
 				  [
@@ -39,6 +39,19 @@
 				  ]
 			    </small>
 			  </button>
+
+			  <button ng-click='ctrl.simulatePolicyEvaluation()' ng-disabled="ctrl.game.win" class="btn restart-button">
+				  Policy Evaluation (check the console)
+			  </button>
+
+			  <button ng-click='ctrl.simulatePolicyIteration()' ng-disabled="ctrl.game.win" class="btn restart-button">
+				  Policy Iteration (check the console)
+			  </button>
+
+			  <button ng-click='ctrl.simulateValueIteration()' ng-disabled="ctrl.game.win" class="btn restart-button">
+				  Value Iteration (check the console)
+			  </button>
+
 		  </div>
 		  <div class="col-xs-6 text-right"  style="margin-bottom: 10px">
 			  <button ng-click='ctrl.stepOnce()' ng-disabled="ctrl.game.win" class="btn restart-button">StepOnce</button>

@@ -13,6 +13,22 @@ var World = function () {
 
   this.steps = 0;
 
+  this.predatorActions = [
+    { action: 'stay', transition: { x: 0, y: 0 }, probability: 0.2 },
+    { action: 'left', transition: { x: -1, y: 0 }, probability: 0.2 },
+    { action: 'right', transition: { x: 1, y: 0 }, probability: 0.2 },
+    { action: 'up', transition: { x: 0, y: -1 }, probability: 0.2 },
+    { action: 'down', transition: { x: 0, y: 1 }, probability: 0.2 }
+  ];
+
+  this.preyActions = [
+    { action: 'stay', transition: { x: 0, y: 0 }, probability: 0.8 },
+    { action: 'left', transition: { x: -1, y: 0 }, probability: 0.05 },
+    { action: 'right', transition: { x: 1, y: 0 }, probability: 0.05 },
+    { action: 'up', transition: { x: 0, y: -1 }, probability: 0.05 },
+    { action: 'down', transition: { x: 0, y: 1 }, probability: 0.05 }
+  ];
+
   this.$get = function () {
     this.grid = [];
     this.predators = [];
@@ -26,6 +42,14 @@ var World = function () {
       return world.steps;
     };
 
+    this.getPredatorActions = function () {
+      return world.predatorActions;
+    };
+
+    this.getPreyActions = function () {
+      return world.preyActions;
+    };
+
     // Build game board
     this.buildEmptyGameBoard = function () {
       this.grid = [];
@@ -36,9 +60,10 @@ var World = function () {
 
       // Initialize our grid
       for (var x = 0; x < world.size * world.size; x++) {
-        this.grid[x] = null;
+        this.grid[x] = {
+          action: null
+        };
       }
-
     };
 
     this.giveFeedback = function (initState, action, options) {
@@ -99,13 +124,7 @@ var World = function () {
     this.spawnPredator = function (state) {
       var _predator = new Agent(world, {
         state: state,
-        actions: [
-          { action: 'stay', transition: { x: 0, y: 0 }, probability: 0.2 },
-          { action: 'left', transition: { x: -1, y: 0 }, probability: 0.2 },
-          { action: 'right', transition: { x: 1, y: 0 }, probability: 0.2 },
-          { action: 'up', transition: { x: 0, y: -1 }, probability: 0.2 },
-          { action: 'down', transition: { x: 0, y: 1 }, probability: 0.2 }
-        ]
+        actions: this.predatorActions
       });
 
       this.predators.push(_predator);
@@ -114,74 +133,90 @@ var World = function () {
     this.spawnPrey = function (state) {
       var _prey = new Agent(world, {
         state: state,
-        actions: [
-          { action: 'stay', transition: { x: 0, y: 0 }, probability: 0.8 },
-          { action: 'left', transition: { x: -1, y: 0 }, probability: 0.05 },
-          { action: 'right', transition: { x: 1, y: 0 }, probability: 0.05 },
-          { action: 'up', transition: { x: 0, y: -1 }, probability: 0.05 },
-          { action: 'down', transition: { x: 0, y: 1 }, probability: 0.05 }
-        ]
+        actions: this.preyActions
       });
 
       this.preys.push(_prey);
     };
 
-    // step function
-    this.stepOnce = function () {
-      world.steps++; // 0 based
-      storeWorldState();
-
-      if (!!world.isLogEnabled) {
-        console.log('===== step ===== ', world.steps);
-      }
-
-      var _predator, _prey, _reward;
-
-      for (var i = 0; i < world.predators.length; i++) {
-        _predator = world.predators[i];
-
-        _reward = _predator.takeAction();
-        if (!!world.isLogEnabled) {
-          console.log('predator >>', _predator.state);
-        }
-
-        if (_reward == world.maxReward) {
-          return true;
-        }
-      }
-
-      for (var j = 0; j < world.preys.length; j++) {
-        // map forbidden state which is the predator(s) state
-        var _forbiddenState = _.map(world.predators, function (pred) { return pred.state;});
-        _prey = world.preys[j];
-        _prey.takeAction({forbiddenState: _forbiddenState});
-
-        if (!!world.isLogEnabled) {
-          console.log('prey >>', _prey.state);
-        }
-      }
-
-      return false
-    };
-
-    var storeWorldState = function (){
+    var storeWorldState = function () {
       var currentState = {
         step: world.steps,
-        predators: _.map( world.predators, function (a) { return { state: a.state }; }),
-        preys: _.map( world.preys, function (a) { return { state: a.state }; })
+        predators: _.map(world.predators, function (a) { return { state: a.state }; }),
+        preys: _.map(world.preys, function (a) { return { state: a.state }; })
       };
 
       world.log.push(_.clone(currentState));
     };
 
-    this.solveSimulation = function () {
+    this.runSimulation = function () {
+
+      // step function
+      var stepOnce = function () {
+        world.steps++; // 0 based
+        storeWorldState();
+
+        if (!!world.isLogEnabled) {
+          console.log('===== step ===== ', world.steps);
+        }
+
+        var _predator, _prey, _reward;
+
+        for (var i = 0; i < world.predators.length; i++) {
+          _predator = world.predators[i];
+
+          _reward = _predator.takeAction();
+          if (!!world.isLogEnabled) {
+            console.log('predator >>', _predator.state);
+          }
+
+          if (_reward == world.maxReward) {
+            return true;
+          }
+        }
+
+        for (var j = 0; j < world.preys.length; j++) {
+          // map forbidden state which is the predator(s) state
+          var _forbiddenState = _.map(world.predators, function (pred) { return pred.state;});
+          _prey = world.preys[j];
+          _prey.takeAction({forbiddenState: _forbiddenState});
+
+          if (!!world.isLogEnabled) {
+            console.log('prey >>', _prey.state);
+          }
+        }
+
+        return false
+      };
+
       do {
+
         // do something before step (e.g. debug print)
 
-      } while (!this.stepOnce());
+      } while (!stepOnce());
 
       storeWorldState();
       return !!world.isLogEnabled ? world.log : world.steps;
+    };
+
+    this.showPolicy = function (planningObj, targetLoc) {
+      _.each(world.grid, function (g, index) {
+
+        var y = Math.floor(index / world.size);
+        var x = Math.floor(index - world.size * y);
+
+        var idLoc = encodeRelativeDistance(targetLoc, {x: x, y: y}, world.size);
+
+        // find the encodeID of current grid
+        if (planningObj.policy[idLoc]) {
+          g.action = planningObj.policy[idLoc].action;
+          g.policy = planningObj.policy[idLoc];
+        }
+
+        if (planningObj.stateSpace[idLoc]) {
+          g.stateSpace = planningObj.stateSpace[idLoc];
+        }
+      });
     };
 
     return this;

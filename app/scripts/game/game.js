@@ -5,15 +5,25 @@ angular.module('Game', ['Grid', 'ngCookies'])
 
     this.previewAtStep = function (step) {
       this.steps = this.story[step].steps;
-      this.predators =  this.story[step].predators;
-      this.preys =  this.story[step].preys;
+      this.predators = this.story[step].predators;
+      this.preys = this.story[step].preys;
+    };
+
+    this.updateGridPolicy = function (policy, targetLoc) {
+
+      // for each grid, get the encodedRelativeDistance
+      // and print the policy based on that
+      GridService.showPolicy(policy, targetLoc);
+
     };
 
     this.reinit = function () {
       this.win = false;
       this.grid = GridService.grid;
       this.worldSize = GridService.getSize();
-      this.story = GridService.solveSimulation();
+
+      // run simulator once
+      this.story = GridService.runSimulation();
     };
 
     this.newGame = function (settings) {
@@ -28,7 +38,7 @@ angular.module('Game', ['Grid', 'ngCookies'])
 
       // predator
       var _loc;
-      var predatorDefaultState = [0,0].join(',');
+      var predatorDefaultState = [0, 0].join(',');
       if (settings && !settings.predatorInitLocation) {
         settings.predatorInitLocation = predatorDefaultState;
       }
@@ -42,8 +52,8 @@ angular.module('Game', ['Grid', 'ngCookies'])
 
       // prey
       var preyDefaultState = [
-          settings.worldSize-1,
-          settings.worldSize-1].join(',');
+        Math.floor((settings.worldSize - 1) / 2),
+        Math.floor((settings.worldSize - 1) / 2)].join(',');
 
       if (settings && !settings.preyInitLocation) {
         settings.preyInitLocation = preyDefaultState;

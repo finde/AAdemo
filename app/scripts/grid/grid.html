@@ -1,21 +1,22 @@
 <div id="game-{{ ngModel.worldSize }}">
 	<div class="grid-container">
-    <div class="grid-cell"
-         ng-repeat="cell in ngModel.grid track by $index">
+		<div class="grid-cell"
+		     ng-repeat="cell in ngModel.grid track by $index">
 
-    </div>
-  </div>
+			{{cell.action}}
+		</div>
+	</div>
 
-  <div class="tile-container">
+	<div class="tile-container">
 		<div
 				actor actor-role="prey"
 				state='prey.state' world-size="ngModel.worldSize"
 				ng-repeat='prey in ngModel.preys track by $index'></div>
 
-	  <div
-			  actor actor-role="predator"
-			  state='predator.state' world-size="ngModel.worldSize"
-			  ng-repeat='predator in ngModel.predators track by $index'></div>
+		<div
+				actor actor-role="predator"
+				state='predator.state' world-size="ngModel.worldSize"
+				ng-repeat='predator in ngModel.predators track by $index'></div>
 
-  </div>
+	</div>
 </div>
