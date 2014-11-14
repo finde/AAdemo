@@ -21,6 +21,6 @@ Have fun playing around with the simulator.
 Note: If you change the initial settings (world size, predator location, or prey location), you need to click the 'start' button again. Otherwise the simulator is not recreated.
 
 Author:
-Arif Qodari
-Finde Xumara
+Arif Qodari,
+Finde Xumara,
 Roelof van der Heijden
