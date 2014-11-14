@@ -91,10 +91,6 @@ h1.title {
   float:       left;
 }
 
-#settings {
-  margin-top: 1em;
-}
-
 .worldSize-container, .predatorLocation-container, .preyLocation-container {
   $inner-height: 25px;
 
@@ -164,11 +160,41 @@ h1.title {
   line-height:     42px;
   cursor:          pointer;
   border:          none;
-  margin-left:     10px;
 
   &:hover, &:focus {
     color: white;
   }
+}
+
+.mode-button {
+  background:      #8f7a66;
+  border-radius:   3px;
+  text-decoration: none;
+  color:           #f9f6f2;
+  height:          40px;
+  cursor:          pointer;
+  border:          none;
+  font-size:       14px;
+  width:           100%;
+  text-align:      center;
+
+  &:hover, &:focus {
+    color:   white;
+    opacity: 1;
+  }
+
+  &.active {
+    opacity: 0.9;
+  }
+
+  &.innactive {
+    opacity: 0.5;
+  }
+}
+
+button {
+  outline:        none !important;
+  outline-offset: none !important;
 }
 
 #content {
@@ -179,7 +205,7 @@ h1.title {
   position: relative;
   width:    $width;
   height:   $width;
-  margin:   1.5em auto;
+  margin:   1em auto;
 }
 
 .game-overlay {
@@ -199,12 +225,12 @@ h1.title {
 
   &.ng-enter {
     @include transition(all 500ms ease-in);
-//    @include transform(translate(0, 100%));
+    //    @include transform(translate(0, 100%));
     opacity: 0;
   }
 
   &.ng-enter-active {
-//    @include transform(translate(0, 0));
+    //    @include transform(translate(0, 0));
     opacity: 1;
   }
 
@@ -258,6 +284,42 @@ h1.title {
         &:last-child {
           margin-right: 0
         }
+
+        $arrow-size: 18px;
+        $centering-padding: floor($tile-size - $arrow-size)/ 2;
+
+        position:      relative;
+
+        .arrow {
+          position: absolute;
+          opacity:  0.05;
+
+          &.dir-up {
+            top:  0;
+            left: $centering-padding - 1;
+          }
+
+          &.dir-down {
+            bottom: 0;
+            left:   $centering-padding + 1;
+            top:    auto;
+          }
+
+          &.dir-left {
+            top:  $centering-padding;
+            left: 0%;
+          }
+
+          &.dir-right {
+            top:   $centering-padding;
+            right: 0;
+          }
+
+          &.active {
+            opacity: 1;
+          }
+        }
+
       }
     }
 
@@ -266,17 +328,17 @@ h1.title {
       z-index:  2;
 
       .unstyled-tile {
-//        font-family: $tile-font;
+        //        font-family: $tile-font;
         position:    absolute;
         width:       $tile-size;
         height:      $tile-size;
         background:  white;
         margin:      0 auto;
-//        font-size:   2em;
+        //        font-size:   2em;
         text-align:  center;
         font-weight: bold;
         z-index:     10;
-//        font-size:   2.5em;
+        //        font-size:   2.5em;
         line-height: ($width/$tile-count) - $tile-padding;
       }
       .tile {
@@ -324,7 +386,7 @@ h1.title {
           text-align:  center;
           font-weight: bold;
           z-index:     10;
-//          font-size:   2.5em;
+          //          font-size:   2.5em;
         }
 
         img.actor {
@@ -371,4 +433,60 @@ h1.title {
 
 .no-lineheight {
   line-height: 0 !important;
+}
+
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.glyphicon-refresh-animate {
+  -animation:        spin .7s infinite linear;
+  -webkit-animation: spin2 .7s infinite linear;
+}
+
+@-webkit-keyframes spin2 {
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: scale(1) rotate(0deg);
+  }
+  to {
+    transform: scale(1) rotate(360deg);
+  }
+}
+
+#test-result {
+  position:      absolute;
+  top:           0;
+  z-index:       10;
+  background:    #BBADA0;
+  width:         100%;
+  height:        100%;
+  left:          -15px;
+  padding:       10px;
+  border:        2px solid #8F7A66;
+  border-radius: 3px;
+  font-size:     14px;
+  opacity:       0.7;
+}
+
+.panel {
+  margin-bottom: 15px;
+}
+
+.small-font {
+  font-size: 10px;
+  text-align: center;
+  margin-top: 5px;
 }

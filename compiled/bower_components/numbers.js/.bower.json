@@ -1,0 +1,32 @@
+{
+  "name": "numbers.js",
+  "main": "src/numbers.js",
+  "homepage": "https://github.com/sjkaliski/numbers.js",
+  "authors": [
+    "Steve Kaliski <sjkaliski@gmail.com>"
+  ],
+  "description": "Advanced Mathematics Library for JavaScript",
+  "keywords": [
+    "math",
+    "mathematics",
+    "numbers",
+    "statistics"
+  ],
+  "license": "Apache",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "_release": "fe4da72f76",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "fe4da72f761c789d14d04267952c71f2149d2724"
+  },
+  "_source": "git://github.com/sjkaliski/numbers.js.git",
+  "_target": "*",
+  "_originalSource": "numbers.js"
+}

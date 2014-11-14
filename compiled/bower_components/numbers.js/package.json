@@ -1,0 +1,50 @@
+{
+  "author": "Steve Kaliski <sjkaliski@gmail.com> (https://github.com/sjkaliski)",
+  "name": "numbers",
+  "description": "Advanced Mathematics Library for JavaScript",
+  "version": "0.5.0",
+  "homepage": "https://github.com/sjkaliski/numbers.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/sjkaliski/numbers.js"
+  },
+  "contributors": [
+    "David Byrd (https://github.com/davidbyrd11)",
+    "Ethan Resnick (https://github.comc/ethanresnick)",
+    "Dakota St. Laurent (https://github.com/StDako)",
+    "Kartik Talwar (https://github.com/KartikTalwar)",
+    "Larry Battle (https://github.com/LarryBattle)"
+  ],
+  "engines": {
+    "node": ">= v0.6.0"
+  },
+  "main": "index",
+  "keywords": [
+    "math",
+    "mathematics",
+    "numbers",
+    "statistics"
+  ],
+  "devDependencies": {
+    "browserify": "~5.12.1",
+    "del": "~0.1.3",
+    "gulp": "~3.8.8",
+    "gulp-jsbeautifier": "0.0.3",
+    "gulp-jshint": "~1.8.4",
+    "gulp-mocha": "~1.1.0",
+    "gulp-rename": "~1.2.0",
+    "gulp-uglify": "~1.0.1",
+    "jshint-stylish": "~1.0.0",
+    "mocha": "~1.8.0",
+    "seedrandom": "~2.3.10",
+    "uglify-js": "~2.2.2",
+    "vinyl-buffer": "~1.0.0",
+    "vinyl-source-stream": "~1.0.0"
+  },
+  "scripts": {
+    "build": "gulp build",
+    "format": "gulp format",
+    "lint": "gulp lint",
+    "test": "gulp test"
+  }
+}
