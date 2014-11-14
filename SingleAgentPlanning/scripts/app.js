@@ -54,57 +54,57 @@ angular
 
       self.message = 'planning... (check the console to see the detail)';
 
+      alert('please wait for a moment while the system is running the calculation');
+
       // reset board
-      $timeout(function () {
-        self.game.newGame(self.settings, function () {
+      self.game.newGame(self.settings, function () {
 
-          simulator = new Simulator(self.settings);
-          self.settings.finalStep = self.game.story.length - 1; // 0 based
-          self.previewStep();
+        simulator = new Simulator(self.settings);
+        self.settings.finalStep = self.game.story.length - 1; // 0 based
+        self.previewStep();
 
-          // random policy
+        // random policy
 //          self.message = 'calculating random policy statistics...';
 
-          simulator.randomPolicy(100, function (stats) {
-            self.calculatedPlan.randomPolicy = {stats: stats};
-            self.isReady.randomPolicy = true;
-          });
-
-          // policy evaluation
-//          self.message = 'calculating policy evaluation...';
-          var scenario = [];
-          scenario.push({predator: {x: 0, y: 0}, prey: {x: 5, y: 5}});
-          scenario.push({predator: {x: 2, y: 3}, prey: {x: 5, y: 4}});
-          scenario.push({predator: {x: 2, y: 10}, prey: {x: 10, y: 0}});
-          scenario.push({predator: {x: 10, y: 10}, prey: {x: 0, y: 0}});
-
-          simulator.policyEvaluation(scenario, function (_scenario, valueGrid) {
-            self.calculatedPlan.policyEvaluation = {valueGrid: valueGrid, scenario: scenario};
-            self.isReady.policyEvaluation = true;
-          });
-
-          // policy iteration
-//          self.message = 'calculating policy iteration...';
-          var discountFactors = [0.1, 0.5, 0.7, 0.9];
-          simulator.policyIteration(discountFactors, function (results) {
-            self.calculatedPlan.policyIteration = _.clone(results);
-            self.isReady.policyIteration = true;
-          });
-
-          // value iteration
-//          self.message = 'calculating value iteration...';
-          var discountFactors = [0.1, 0.5, 0.7, 0.9];
-          simulator.valueIteration(discountFactors, function (results) {
-            self.calculatedPlan.valueIteration = _.clone(results);
-            self.isReady.valueIteration = true;
-          });
-
-          self.isBusy = false;
-
-          self.message = 'planning done, click button below to see the result ↓';
-          // printing report
+        simulator.randomPolicy(100, function (stats) {
+          self.calculatedPlan.randomPolicy = {stats: stats};
+          self.isReady.randomPolicy = true;
         });
-      }, 10);
+
+        // policy evaluation
+//          self.message = 'calculating policy evaluation...';
+        var scenario = [];
+        scenario.push({predator: {x: 0, y: 0}, prey: {x: 5, y: 5}});
+        scenario.push({predator: {x: 2, y: 3}, prey: {x: 5, y: 4}});
+        scenario.push({predator: {x: 2, y: 10}, prey: {x: 10, y: 0}});
+        scenario.push({predator: {x: 10, y: 10}, prey: {x: 0, y: 0}});
+
+        simulator.policyEvaluation(scenario, function (_scenario, valueGrid) {
+          self.calculatedPlan.policyEvaluation = {valueGrid: valueGrid, scenario: scenario};
+          self.isReady.policyEvaluation = true;
+        });
+
+        // policy iteration
+//          self.message = 'calculating policy iteration...';
+        var discountFactors = [0.1, 0.5, 0.7, 0.9];
+        simulator.policyIteration(discountFactors, function (results) {
+          self.calculatedPlan.policyIteration = _.clone(results);
+          self.isReady.policyIteration = true;
+        });
+
+        // value iteration
+//          self.message = 'calculating value iteration...';
+        var discountFactors = [0.1, 0.5, 0.7, 0.9];
+        simulator.valueIteration(discountFactors, function (results) {
+          self.calculatedPlan.valueIteration = _.clone(results);
+          self.isReady.valueIteration = true;
+        });
+
+        self.isBusy = false;
+
+        self.message = 'planning done, click button below to see the result ↓';
+        // printing report
+      });
     };
 
     this.stepOnce = function () {

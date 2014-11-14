@@ -191,9 +191,6 @@ var PolicyIteration = function (gamma, theta, world, precision) {
             partialSum += preyAction.probability * (immediate_reward + gamma * vDestination.value);
           } // foreach prey action
 
-
-          // round to 7 digits precision
-          partialSum = Math.round(partialSum * precision) / precision;
           actionValues.push(partialSum);
 
         } // foreach predator action
@@ -203,13 +200,6 @@ var PolicyIteration = function (gamma, theta, world, precision) {
         var actionIndex = _.indexOf(actionValues, maxValue);
         policy[state.id] = predatorActions[actionIndex];
 
-        returnPolicy[state.id] = [];
-        _.each(actionValues, function (values, actionIndex) {
-          if (values == maxValue) {
-            returnPolicy[state.id].push(predatorActions[actionIndex]);
-          }
-        });
-
         state.actionValues = actionValues;
       }
 
@@ -217,6 +207,28 @@ var PolicyIteration = function (gamma, theta, world, precision) {
         isPolicyStable = false;
       }
     });
+
+
+    // float precision
+    // for each state
+    if (!!isPolicyStable) {
+      _.each(stateSpace, function (state) {
+        var values = [];
+        _.each(state.actionValues, function (value){
+          values.push(Math.round(value * precision)/ precision);
+        });
+
+        var maxValue = numbers.basic.max(values);
+
+        returnPolicy[state.id] = [];
+        _.each(values, function (values, actionIndex) {
+          if (values == maxValue) {
+            returnPolicy[state.id].push(predatorActions[actionIndex]);
+          }
+        });
+      });
+
+    }
 
     iteration++;
     console.log('Iteration:' + iteration, 'isPolicyStable:', isPolicyStable);
