@@ -14,19 +14,19 @@ var World = function () {
   this.steps = 0;
 
   this.predatorActions = [
-    { action: 'stay', transition: { x: 0, y: 0 }, probability: 0.2 },
-    { action: 'left', transition: { x: -1, y: 0 }, probability: 0.2 },
-    { action: 'right', transition: { x: 1, y: 0 }, probability: 0.2 },
-    { action: 'up', transition: { x: 0, y: -1 }, probability: 0.2 },
-    { action: 'down', transition: { x: 0, y: 1 }, probability: 0.2 }
+    { index: 0, action: 'stay', transition: { x: 0, y: 0 }, probability: 0.2 },
+    { index: 1, action: 'left', transition: { x: -1, y: 0 }, probability: 0.2 },
+    { index: 2, action: 'right', transition: { x: 1, y: 0 }, probability: 0.2 },
+    { index: 3, action: 'up', transition: { x: 0, y: -1 }, probability: 0.2 },
+    { index: 4, action: 'down', transition: { x: 0, y: 1 }, probability: 0.2 }
   ];
 
   this.preyActions = [
-    { action: 'stay', transition: { x: 0, y: 0 }, probability: 0.8 },
-    { action: 'left', transition: { x: -1, y: 0 }, probability: 0.05 },
-    { action: 'right', transition: { x: 1, y: 0 }, probability: 0.05 },
-    { action: 'up', transition: { x: 0, y: -1 }, probability: 0.05 },
-    { action: 'down', transition: { x: 0, y: 1 }, probability: 0.05 }
+    { index: 0, action: 'stay', transition: { x: 0, y: 0 }, probability: 0.8 },
+    { index: 1, action: 'left', transition: { x: -1, y: 0 }, probability: 0.05 },
+    { index: 2, action: 'right', transition: { x: 1, y: 0 }, probability: 0.05 },
+    { index: 3, action: 'up', transition: { x: 0, y: -1 }, probability: 0.05 },
+    { index: 4, action: 'down', transition: { x: 0, y: 1 }, probability: 0.05 }
   ];
 
   this.$get = function () {

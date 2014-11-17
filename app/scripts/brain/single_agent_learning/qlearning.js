@@ -19,11 +19,11 @@ var QLearning = function (alpha, gamma, actionSelectionPolicy, epsilon, world, n
   var stateSpace = new OptimizedStateSpace(worldSize, 0);
 
   if (!gamma) {
-    gamma = 0.1; // 0.1, 0.5, 0.7, 0.9
+    gamma = 0.8; // 0.1, 0.5, 0.7, 0.9
   }
 
   if (!alpha) {
-    alpha = 0.1; // 0.1 ... 0.5
+    alpha = 0.5; // 0.1 ... 0.5
   }
 
   if (!epsilon) {
@@ -31,7 +31,7 @@ var QLearning = function (alpha, gamma, actionSelectionPolicy, epsilon, world, n
   }
 
   if (!nLearning) {
-    nLearning = 2;
+    nLearning = 500;
   }
 
   var predatorActions = world.getPredatorActions();
@@ -42,54 +42,24 @@ var QLearning = function (alpha, gamma, actionSelectionPolicy, epsilon, world, n
     return Math.floor(Math.random() * (max - min + 1)) + min;
   };
 
-  var predatorArgmax = function (currentState, stateSpace) {
-
-    // for each predator action
-    var actionValue = [];
-    _.each(predatorActions, function (predatorAction) {
-
-      var partialSum = 0;
-
-      // predator take action
-      var predatorEndState = transitionFunction(currentState, 'predator', predatorAction, worldSize);
-
-      // immediate reward for predator will catch the prey based on this action
-      if (predatorEndState === '0_0') {
-
-        partialSum += world.maxReward;
-
-      } else {
-
-        var preyLegalActions = getPreyLegalMove(currentState, preyActions, worldSize);
-        _.each(preyLegalActions, function (preyAction) {
-
-          // prey take action
-          var preyEndState = transitionFunction(predatorEndState, 'prey', preyAction, worldSize);
-
-          // only use the prey action probability because the predator action is deterministic
-          partialSum += stateSpace[preyEndState].value * preyAction.probability;
-
-        });
-      }
-
-      actionValue.push(partialSum);
-    });
-
-    // return action
-    return predatorActions[argmax(actionValue)];
-  };
-
   var greedyActionSelections = function (epsilon, currentStateIndex, stateSpace) {
     var random = Math.random();
 
     var action; // action Object
     if (random < epsilon) {
       // choose random action
-      action = predatorActions[rand(0, _.size(predatorActions))];
+      action = predatorActions[rand(0, _.size(predatorActions) - 1)];
     } else {
       // choose argmax q(s,a)
-      var actionIndex = argmax(_.pluck(stateSpace[currentStateIndex].actionValues, 'value'));
-      action = stateSpace[currentStateIndex].actionValues[actionIndex];
+      var actionValues = _.pluck(stateSpace[currentStateIndex].actionValues, 'value');
+      var maxValue = numbers.basic.max(actionValues);
+
+      for (var i = 0; i < actionValues.length; i++) {
+        if (actionValues[i] == maxValue) {
+          action = stateSpace[currentStateIndex].actionValues[i];
+          break;
+        }
+      }
     }
 
     return action;
@@ -114,7 +84,7 @@ var QLearning = function (alpha, gamma, actionSelectionPolicy, epsilon, world, n
   });
 
   // for each episode - until n times
-  var s;
+  var a, s, sPrime, r, results = [], trials = [];
   for (var episode = 0; episode < nLearning; episode++) {
 
     // Init s
@@ -124,26 +94,76 @@ var QLearning = function (alpha, gamma, actionSelectionPolicy, epsilon, world, n
     var innerLoopStep = 0;
     do {
       // choose a from s using policy derived from Q (e.e e-greedy)
-      var a = greedyActionSelections(epsilon, s, stateSpace);
+      a = greedyActionSelections(epsilon, s, stateSpace);
 
       // take action a, observe r and s'
       var sAfterPredatorAction = transitionFunction(s, 'predator', a, worldSize);
-      var r = 0;
-      if (sAfterPredatorAction.id === '0_0') {
+      r = 0;
+      if (sAfterPredatorAction === '0_0') {
         r = world.maxReward;
+        sPrime = '0_0';
+
       } else {
         // prey take action to get s'
-        transitionFunction(s, 'prey', preyAction, worldSize);
+        var prey = new Agent(world, {
+          actions: getPreyLegalMove(s, preyActions, worldSize)
+        });
+
+        sPrime = transitionFunction(s, 'prey', prey.takeRandomAction(), worldSize);
       }
 
       // update q(s,a)
+      var actionValues = _.pluck(stateSpace[sPrime].actionValues, 'value');
+      var qSPrimeA = numbers.basic.max(actionValues);
+
+      stateSpace[s].actionValues[a.index].value += alpha * (r + gamma * qSPrimeA - stateSpace[s].actionValues[a.index].value);
 
       // update s <- s'
+      s = sPrime;
 
-    } while (s.id !== '0_0' && innerLoopStep++ < 10000);
+      innerLoopStep++;
+    } while (s !== '0_0');
 
+    results.push(innerLoopStep);
+    trials.push(episode);
+
+    console.log(episode);
   }
 
+//  return results;
 
-  return stateSpace;
+  var data = {
+    labels: trials,
+    datasets: [
+      {
+        label: "results",
+        fillColor: "rgba(220,220,220,0.2)",
+        strokeColor: "rgba(220,220,220,1)",
+        pointColor: "rgba(220,220,220,1)",
+        pointStrokeColor: "#fff",
+        pointHighlightFill: "#fff",
+        pointHighlightStroke: "rgba(220,220,220,1)",
+        data: results
+      }
+    ]
+  };
+
+  var scenario = [];
+  scenario.push({predator: {x: 0, y: 0}, prey: {x: 5, y: 5}});
+  scenario.push({predator: {x: 2, y: 3}, prey: {x: 5, y: 4}});
+  scenario.push({predator: {x: 2, y: 10}, prey: {x: 10, y: 0}});
+  scenario.push({predator: {x: 10, y: 10}, prey: {x: 0, y: 0}});
+
+  _.each(scenario, function (s) {
+    console.log(stateSpace[encodeRelativeDistance(s.predator, s.prey, worldSize)]);
+  });
+
+
+  // add element to body
+  $('#chart').remove();
+  $('body').append('<canvas id="chart" width="600" height="400" style="position: absolute; top: 320px; left: 120px;"></canvas>');
+
+  // updated chart
+  var ctx = document.getElementById("chart").getContext("2d");
+  var myLineChart = new Chart(ctx).Line(data, {pointDot: false});
 };

@@ -24,7 +24,7 @@ var Agent = function (world, initSettings) {
 
   this.takeAction = function (options) {
     do {
-      var _action = takeRandomAction();
+      var _action = this.takeRandomAction();
       var feedback = world.giveFeedback(agent.state, _action, options);
     } while (feedback == false);
 
@@ -53,7 +53,7 @@ var Agent = function (world, initSettings) {
     return weighed_list;
   };
 
-  var takeRandomAction = function () {
+  this.takeRandomAction = function () {
     var weighed_list = generateWeighedList(actions);
     var random_num = rand(0, weighed_list.length - 1);
     return weighed_list[random_num];
