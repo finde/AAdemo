@@ -1,11 +1,11 @@
 'use strict';
 
 angular
-  .module('gridWorldApp', ['Game', 'Grid', 'Actor', 'ngAnimate', 'ngCookies', 'SafeApply'])
+  .module('gridWorldApp', ['Game', 'Grid', 'Actor', 'ngAnimate'])
   .config(function (GridServiceProvider) {
     GridServiceProvider.setSize(11);
   })
-  .controller('GameController', function (GameManager, $timeout, $interval, $q) {
+  .controller('GameController', function (GameManager, $timeout, $interval) {
     var self = this;
     var simulator;
     this.game = GameManager;
