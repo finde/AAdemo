@@ -3,12 +3,14 @@
 		<div class="grid-cell relative"
 		     ng-repeat="cell in ngModel.grid track by $index">
 
+			<!--{{cell.stateSpace.value}}-->
 
 			<!-- for each policy -->
 			<div ng-repeat="policy in cell.policy" ng-if="!!!cell.value">
 				<div class="arrow glyphicon glyphicon-arrow-{{direction}} dir-{{direction}}"
 				     ng-class="{'true':'active'}[policy.action == direction]"
 				     ng-repeat="direction in ['left','right','up','down']">
+
 				</div>
 			</div>
 

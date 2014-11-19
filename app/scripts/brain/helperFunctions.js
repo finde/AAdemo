@@ -249,3 +249,122 @@ var getPreyLegalMove = function (currentState, preyActions, worldSize) {
 
   return preyLegalActions;
 };
+
+var rand = function (min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
+var actionSelection = function (actionSelector, opts) {
+  var softmaxActionSelection = function (currentStateIndex, stateSpace) {
+
+    var actionValues = _.pluck(stateSpace[currentStateIndex].actionValues, 'value');
+
+    var expValues = [];
+    _.each(actionValues, function (actionValue) {
+      expValues.push(Math.exp(actionValue));
+    });
+
+    var randomValue = Math.random() * numbers.basic.sum(expValues);
+
+    for (var i = 0; i < _.size(actionValues); i++) {
+      if (randomValue <= expValues[i]) {
+        return stateSpace[currentStateIndex].actionValues[i];
+      } else {
+        randomValue -= expValues[i];
+      }
+    }
+
+    // to ensure it return something
+    return _.first(stateSpace[currentStateIndex].actionValues);
+  };
+
+  var greedyActionSelections = function (epsilon, currentStateIndex, stateSpace) {
+    var random = Math.random();
+
+    var action; // action Object
+    if (random < epsilon) {
+      // choose random action
+      action = predatorActions[rand(0, _.size(predatorActions) - 1)];
+    } else {
+      // choose argmax q(s,a)
+      var actionValues = _.pluck(stateSpace[currentStateIndex].actionValues, 'value');
+      var maxValue = numbers.basic.max(actionValues);
+
+      for (var i = 0; i < actionValues.length; i++) {
+        if (actionValues[i] == maxValue) {
+          action = stateSpace[currentStateIndex].actionValues[i];
+          break;
+        }
+      }
+    }
+
+    return action;
+  };
+
+  switch (actionSelector) {
+    case 'greedy':
+      return greedyActionSelections(opts.epsilon, opts.currentStateIndex, opts.stateSpace);
+
+    case 'softmax':
+      return softmaxActionSelection(opts.currentStateIndex, opts.stateSpace);
+  }
+};
+
+var drawChart = function (results, nbins, stateSpace, worldSize) {
+  function averagingData(data, nPoints) {
+    var batchSize = _.size(data) / nPoints;
+    var _results = {
+      labels: [],
+      data: []
+    };
+
+    var i = 0, x = 0;
+    while (i < _.size(data)) {
+
+      var temp = [];
+      for (var j = 0; j < batchSize && i < _.size(data); j++, i++) {
+        temp.push(data[i]);
+      }
+
+      _results.labels.push(++x);
+      _results.data.push(numbers.statistic.mean(temp));
+    }
+
+    return _results;
+  }
+
+  var results = averagingData(results, nbins);
+
+  var data = {
+    labels: results.labels,
+    datasets: [
+      {
+        label: "results",
+        fillColor: "rgba(220,220,220,0.2)",
+        strokeColor: "rgba(220,220,220,1)",
+        pointColor: "rgba(220,220,220,1)",
+        pointStrokeColor: "#fff",
+        pointHighlightFill: "#fff",
+        pointHighlightStroke: "rgba(220,220,220,1)",
+        data: results.data
+      }
+    ]
+  };
+
+  var scenario = [];
+  scenario.push({predator: {x: 0, y: 0}, prey: {x: 5, y: 5}});
+  scenario.push({predator: {x: 2, y: 3}, prey: {x: 5, y: 4}});
+  scenario.push({predator: {x: 2, y: 10}, prey: {x: 10, y: 0}});
+  scenario.push({predator: {x: 10, y: 10}, prey: {x: 0, y: 0}});
+
+  _.each(scenario, function (s) {
+    console.log(stateSpace[encodeRelativeDistance(s.predator, s.prey, worldSize)]);
+  });
+
+
+  // updated chart
+  var ctx = document.getElementById("chart").getContext("2d");
+  var myLineChart = new Chart(ctx).Line(data, {pointDot: false, responsive: true, maintainAspectRatio: false});
+
+  $('#stateSpaceOutput').text(JSON.stringify(options));
+}

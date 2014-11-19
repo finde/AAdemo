@@ -1,12 +1,12 @@
 /**
- * Q-learning for Single Agent Learning
+ * Sarsa for Single Agent Learning
  * @param alpha = learning rate
  * @param gamma = discount factor
  * @param actionSelectionPolicy = 'greedy' or 'soft'
  * @param epsilon = action selection variable
  * @constructor
  */
-var QLearning = function (options) {
+var Sarsa = function (options) {
 
   if (!options) {
     options = {};
@@ -64,22 +64,22 @@ var QLearning = function (options) {
   }
 
   // for each episode - until n times
-  var a, s, sPrime, r;
+  var a, aPrime, s, sPrime, r;
   for (var episode = 0; episode < options.nLearning; episode++) {
 
     // Init s
     s = encodeRelativeDistance({x: 0, y: 0}, {x: 5, y: 5}, worldSize);
 
+    // choose a from s using policy derived from Q (e.g e-greedy)
+    a = actionSelection(options.actionSelector, {
+      epsilon: options.epsilon,
+      currentStateIndex: s,
+      stateSpace: options.stateSpace
+    });
+
     // repeat until terminal or innerReach
     var innerLoopStep = 0;
     do {
-      // choose a from s using policy derived from Q (e.e e-greedy)
-//      a = greedyActionSelections(options.epsilon, s, options.stateSpace);
-      a = actionSelection(options.actionSelector, {
-        epsilon: options.epsilon,
-        currentStateIndex: s,
-        stateSpace: options.stateSpace
-      });
 
       // take action a, observe r and s'
       var sAfterPredatorAction = transitionFunction(s, 'predator', a, worldSize);
@@ -97,22 +97,25 @@ var QLearning = function (options) {
         sPrime = transitionFunction(s, 'prey', prey.takeRandomAction(), worldSize);
       }
 
+      // choose a' from s' using policy derived from Q (e.g e-greedy)
+      aPrime = actionSelection(options.actionSelector, {
+        epsilon: options.epsilon,
+        currentStateIndex: sPrime,
+        stateSpace: options.stateSpace
+      });
+
       // update q(s,a)
       var actionValues = _.pluck(options.stateSpace[sPrime].actionValues, 'value');
-      var qSPrimeA = numbers.basic.max(actionValues);
+      var qSPrimeAPrime = options.stateSpace[sPrime].actionValues[aPrime.index].value;
 
-      if (!options.stateSpace[s].actionValues[a.index].exp) {
-        options.stateSpace[s].actionValues[a.index].exp = 0;
-      }
-
-      options.stateSpace[s].actionValues[a.index].exp++;
-      options.stateSpace[s].actionValues[a.index].value += options.alpha * (r + options.gamma * qSPrimeA - options.stateSpace[s].actionValues[a.index].value);
+      options.stateSpace[s].actionValues[a.index].value += options.alpha * (r + options.gamma * qSPrimeAPrime - options.stateSpace[s].actionValues[a.index].value);
 
       // round precision
       options.stateSpace[s].actionValues[a.index].value = Math.round(options.stateSpace[s].actionValues[a.index].value * 1e6) / 1e6;
 
       // update s <- s'
       s = sPrime;
+      a = aPrime;
 
       innerLoopStep++;
     } while (s !== '0_0');
