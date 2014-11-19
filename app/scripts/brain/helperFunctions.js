@@ -366,5 +366,4 @@ var drawChart = function (results, nbins, stateSpace, worldSize) {
   var ctx = document.getElementById("chart").getContext("2d");
   var myLineChart = new Chart(ctx).Line(data, {pointDot: false, responsive: true, maintainAspectRatio: false});
 
-  $('#stateSpaceOutput').text(JSON.stringify(options));
-}
+};
