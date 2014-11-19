@@ -6,7 +6,7 @@
  * @param epsilon = action selection variable
  * @constructor
  */
-var QLearning = function (alpha, gamma, actionSelectionPolicy, epsilon, world, nLearning) {
+var QLearning = function (nLearning, stateSpace, world, gamma, alpha, epsilon) {
 
   // properties
   if (!world) {
@@ -16,7 +16,6 @@ var QLearning = function (alpha, gamma, actionSelectionPolicy, epsilon, world, n
   }
 
   var worldSize = world.getSize();
-  var stateSpace = new OptimizedStateSpace(worldSize, 0);
 
   if (!gamma) {
     gamma = 0.8; // 0.1, 0.5, 0.7, 0.9
@@ -31,7 +30,7 @@ var QLearning = function (alpha, gamma, actionSelectionPolicy, epsilon, world, n
   }
 
   if (!nLearning) {
-    nLearning = 500;
+    nLearning = 1000;
   }
 
   var predatorActions = world.getPredatorActions();
@@ -67,21 +66,24 @@ var QLearning = function (alpha, gamma, actionSelectionPolicy, epsilon, world, n
 
   // Algorithm
   // - init Q(s,a) = 15
-  _.each(stateSpace, function (state) {
+  if (!stateSpace) {
+    stateSpace = new OptimizedStateSpace(worldSize, 0);
+    _.each(stateSpace, function (state) {
 
-    state.actionValues = [];
+      state.actionValues = [];
 
-    // if state is not terminal, set value to 15
-    _.each(predatorActions, function (action) {
-      if (state.id !== '0_0') {
-        action.value = 15;
-      } else {
-        action.value = 0;
-      }
-      state.actionValues.push(_.clone(action));
+      // if state is not terminal, set value to 15
+      _.each(predatorActions, function (action) {
+        if (state.id !== '0_0') {
+          action.value = 15;
+        } else {
+          action.value = 0;
+        }
+        state.actionValues.push(_.clone(action));
+      });
+
     });
-
-  });
+  }
 
   // for each episode - until n times
   var a, s, sPrime, r, results = [], trials = [];
@@ -116,7 +118,15 @@ var QLearning = function (alpha, gamma, actionSelectionPolicy, epsilon, world, n
       var actionValues = _.pluck(stateSpace[sPrime].actionValues, 'value');
       var qSPrimeA = numbers.basic.max(actionValues);
 
+      if (!stateSpace[s].actionValues[a.index].exp) {
+        stateSpace[s].actionValues[a.index].exp = 0;
+      }
+
+      stateSpace[s].actionValues[a.index].exp++;
       stateSpace[s].actionValues[a.index].value += alpha * (r + gamma * qSPrimeA - stateSpace[s].actionValues[a.index].value);
+
+      // round precision
+      stateSpace[s].actionValues[a.index].value = Math.round(stateSpace[s].actionValues[a.index].value * 1e6) / 1e6;
 
       // update s <- s'
       s = sPrime;
@@ -124,8 +134,10 @@ var QLearning = function (alpha, gamma, actionSelectionPolicy, epsilon, world, n
       innerLoopStep++;
     } while (s !== '0_0');
 
-    results.push(innerLoopStep);
-    trials.push(episode);
+    if (episode % 50 == 0) {
+      results.push(innerLoopStep);
+      trials.push(episode);
+    }
 
     console.log(episode);
   }
@@ -159,11 +171,29 @@ var QLearning = function (alpha, gamma, actionSelectionPolicy, epsilon, world, n
   });
 
 
-  // add element to body
-  $('#chart').remove();
-  $('body').append('<canvas id="chart" width="600" height="400" style="position: absolute; top: 320px; left: 120px;"></canvas>');
-
   // updated chart
   var ctx = document.getElementById("chart").getContext("2d");
-  var myLineChart = new Chart(ctx).Line(data, {pointDot: false});
+  var myLineChart = new Chart(ctx).Line(data, {pointDot: false, responsive: true, maintainAspectRatio: false});
+
+  $('#stateSpaceOutput').text(JSON.stringify(stateSpace));
+};
+
+var reRunQLearning = function (nTimes) {
+  function isValidJson(json) {
+    try {
+      JSON.parse(json);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  var source = $('#stateSpaceOutput').text();
+  if (isValidJson(source)) {
+    var exp = JSON.parse(source);
+    QLearning(nTimes, exp);
+  } else {
+    QLearning(nTimes);
+  }
+
 };
