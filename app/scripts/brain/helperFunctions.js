@@ -281,6 +281,11 @@ var actionSelection = function (actionSelector, opts) {
   var greedyActionSelections = function (epsilon, currentStateIndex, stateSpace) {
     var random = Math.random();
 
+    var world = new World();
+    world.setSize(11);
+    world.isLogEnabled = false;
+    var predatorActions = world.getPredatorActions();
+
     var action; // action Object
     if (random < epsilon) {
       // choose random action
