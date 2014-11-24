@@ -91,10 +91,10 @@ var Sarsa = function (options) {
       } else {
         // prey take action to get s'
         var prey = new Agent(world, {
-          actions: getPreyLegalMove(s, preyActions, worldSize)
+          actions: getPreyLegalMove(sAfterPredatorAction, preyActions, worldSize)
         });
 
-        sPrime = transitionFunction(s, 'prey', prey.takeRandomAction(), worldSize);
+        sPrime = transitionFunction(sAfterPredatorAction, 'prey', prey.takeRandomAction(), worldSize);
       }
 
       // choose a' from s' using policy derived from Q (e.g e-greedy)
