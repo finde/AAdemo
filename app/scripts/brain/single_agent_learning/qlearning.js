@@ -93,7 +93,6 @@ var QLearning = function (options) {
         var prey = new Agent(world, {
           actions: getPreyLegalMove(sAfterPredatorAction, preyActions, worldSize)
         });
-
         sPrime = transitionFunction(sAfterPredatorAction, 'prey', prey.takeRandomAction(), worldSize);
       }
 
