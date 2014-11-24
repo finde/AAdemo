@@ -16,7 +16,7 @@ var offPolicyMC = function (options) {
   }
 
   if (!options.nLearning) {
-    options.nLearning = 500;
+    options.nLearning = 100;
   }
 
   // properties
@@ -104,7 +104,7 @@ var offPolicyMC = function (options) {
 
   // generate an episode
   var a, s, sPrime, r;
-  for (var episode = 0; episode < options.nLearning; episode++) {
+  for (var episode = 1; episode <= options.nLearning; episode++) {
     var sARSequence = [];
 
     // Init s
@@ -153,7 +153,7 @@ var offPolicyMC = function (options) {
       innerLoopStep++;
 
     } while (s !== '0_0');
-    console.log('length of episode', episode, ':', innerLoopStep)
+    console.log('length of episode', episode, 'of', options.nLearning, ':', innerLoopStep)
 
     var t, skip, curS, curA;
     for (var i = sARSequence.length - 1; i >= tau; i--) {
