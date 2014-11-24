@@ -268,6 +268,7 @@ var onPolicyMC = function() {
   var policy = result.policy;
   var n = 100;
   var startState = stateSpace['5_5'];
+  var result = [];
   // console.log(policy['5_5'].greedy.action);
 
 
@@ -276,7 +277,8 @@ var onPolicyMC = function() {
     console.log('iteration = ', iter);
     // generate episode using policy
     var episode = generateEpisode(policy, Q, startState);
-    console.log('length of episode = ', episode.length);
+    result.push(episode.length);
+    console.log('episode length = ', episode.length);
 
     // for each state,action pair in the episode
     for(var i = 0; i < episode.length - 1; i++) {
@@ -302,6 +304,8 @@ var onPolicyMC = function() {
     }
     // console.log('optimum first action = ', policy['5_5'].greedy.action);
   }
+
+  drawChart(result, 100);
   console.log('episode = ', episode);
   console.log('policy = ', policy);
 }
