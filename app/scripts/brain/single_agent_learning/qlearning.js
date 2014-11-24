@@ -53,7 +53,7 @@ var QLearning = function (options) {
       // if state is not terminal, set value to 15
       _.each(predatorActions, function (action) {
         if (state.id !== '0_0') {
-          action.value = 15;
+          action.value = -15;
         } else {
           action.value = 0;
         }
@@ -93,8 +93,7 @@ var QLearning = function (options) {
         var prey = new Agent(world, {
           actions: getPreyLegalMove(sAfterPredatorAction, preyActions, worldSize)
         });
-        var preyAction = prey.takeRandomAction();
-        sPrime = transitionFunction(sAfterPredatorAction, 'prey', preyAction, worldSize);
+        sPrime = transitionFunction(sAfterPredatorAction, 'prey', prey.takeRandomAction(), worldSize);
       }
 
       // update q(s,a)
@@ -122,9 +121,10 @@ var QLearning = function (options) {
     }
     options.results.push(innerLoopStep);
 
-    console.log('episode:', episode);
+    console.log('episode:', episode, innerLoopStep);
   }
 
+  console.log('best:',numbers.basic.min(options.results));
   drawChart(options.results, 100, options.stateSpace, worldSize);
   $('#stateSpaceOutput').text(JSON.stringify(options));
 };
