@@ -2,7 +2,7 @@ var offPolicyMC = function (options) {
   if (!options) {
     options = {};
   }
-//sdfjslkjdfdd
+//sdfjslkj
   if (!options.gamma) {
     options.gamma = 0.9; //todo: try different values
   }
