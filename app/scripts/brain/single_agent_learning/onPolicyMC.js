@@ -66,7 +66,7 @@ var onPolicyMC = function(gamma, epsilon, n) {
       if (state.id == '0_0')
         qValue = 0;
       else
-        qValue = 1;
+        qValue = 0;
 
       for(var i = 0; i < predatorActions.length; i++) {
         var id = state.id + '_' + predatorActions[i].action;
@@ -314,4 +314,6 @@ var onPolicyMC = function(gamma, epsilon, n) {
   drawChart(result, 100);
   console.log('episode = ', episode);
   console.log('policy = ', policy);
+
+  return result;
 }
