@@ -106,7 +106,7 @@ var offPolicyMC = function (options) {
   }
 
   // generate an episode
-  var a, s, sPrime, r;
+  var a, s, sPrime, r, stepsSum = 0;
   for (var episode = 1; episode <= options.nLearning; episode++) {
     var sARSequence = [];
 
@@ -157,6 +157,7 @@ var offPolicyMC = function (options) {
 
     } while (s !== '0_0');
     console.log('length of episode', episode, 'of', options.nLearning, ':', innerLoopStep)
+    stepsSum += innerLoopStep;
 
     var t, skip, curS, curA;
     w = 1;
@@ -187,7 +188,7 @@ var offPolicyMC = function (options) {
       }
 
       //update N(s,a), D(s,a) and Q(s,a)
-      var steps = (sARSequence.length - 1) - i
+      var steps = (sARSequence.length - 1) - i;
       curA.NValue += w * discountedReward(steps, options.gamma, _.last(sARSequence).reward);
       curA.DValue += w;
 
@@ -205,5 +206,6 @@ var offPolicyMC = function (options) {
     } // endfor each sARSequence
 
   }
+  console.log('stepsSum:', stepsSum, 'average:', stepsSum / options.nLearning);
   return options.stateSpace;
 };
