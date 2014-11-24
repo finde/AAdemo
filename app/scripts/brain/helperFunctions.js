@@ -289,13 +289,14 @@ var actionSelection = function (actionSelector, opts) {
     var action; // action Object
     if (random < epsilon) {
       // choose random action
-      action = predatorActions[rand(0, _.size(predatorActions) - 1)];
+      action = stateSpace[currentStateIndex].actionValues[rand(0, _.size(predatorActions) - 1)];
     } else {
       // choose argmax q(s,a)
       var actionValues = _.pluck(stateSpace[currentStateIndex].actionValues, 'value');
       var maxValue = numbers.basic.max(actionValues);
 
       for (var i = 0; i < actionValues.length; i++) {
+        // if multiple actions have maxValue, use the first one
         if (actionValues[i] == maxValue) {
           action = stateSpace[currentStateIndex].actionValues[i];
           break;
