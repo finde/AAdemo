@@ -29,8 +29,8 @@ var offPolicyMC = function (options) {
   var predatorActions = world.getPredatorActions();
   var preyActions = world.getPreyActions();
 
-  var discountedReward = function (step, discountFactor) {
-    return world.maxReward * Math.pow(discountFactor, step);
+  var discountedReward = function (step, discountFactor, reward) {
+    return reward * Math.pow(discountFactor, step);
   };
 
   var probability = function (actionSelector, opts) {
@@ -75,6 +75,9 @@ var offPolicyMC = function (options) {
         return softmaxActionProbability(opts.currentStateIndex, opts.currentAction, opts.stateSpace);
     }
   }
+  
+  // print current params
+  console.log('Parameters: gamma:', options.gamma, 'epsilon:', options.epsilon, 'actionSelector:', options.actionSelector, 'nLearning:', options.nLearning);
 
   // Algorithm
   // - init Q(s,a) = 15
@@ -156,7 +159,18 @@ var offPolicyMC = function (options) {
     console.log('length of episode', episode, 'of', options.nLearning, ':', innerLoopStep)
 
     var t, skip, curS, curA;
+    w = 1;
     for (var i = sARSequence.length - 1; i >= tau; i--) {
+      curS = sARSequence[i].state;
+      curA = sARSequence[i].action;
+
+      //calculate the weight of this state-action pair
+      w = w / probability(options.actionSelector, {
+        epsilon: options.epsilon,
+        currentStateIndex: curS,
+        currentAction: curA,
+        stateSpace: options.stateSpace
+      });
 
       // check if sARSequence[i] is the first
       skip = false;
@@ -172,22 +186,9 @@ var offPolicyMC = function (options) {
         continue;
       }
 
-      w = 1;
-      curS = sARSequence[i].state;
-      curA = sARSequence[i].action;
-
-      //calculate the weight of this state-action pair
-      for (k = i + 1; k <= sARSequence.length - 2; k++) {
-        w = w / probability(options.actionSelector, {
-          epsilon: options.epsilon,
-          currentStateIndex: curS,
-          currentAction: curA,
-          stateSpace: options.stateSpace
-        });
-      }
-
       //update N(s,a), D(s,a) and Q(s,a)
-      curA.NValue += w * discountedReward((sARSequence.length - 1) - i, options.gamma);
+      var steps = (sARSequence.length - 1) - i
+      curA.NValue += w * discountedReward(steps, options.gamma, _.last(sARSequence).reward);
       curA.DValue += w;
 
       //console.log('curS:', curS, '\tnew value:', curA.NValue / curA.DValue, 'r:', sARSequence[i].reward, 'w:', w, ', old vValue:', curA.value);
