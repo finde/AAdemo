@@ -35,7 +35,6 @@ var offPolicyMC = function (options) {
 
   var probability = function (actionSelector, opts) {
 
-    //todo: what if action selector != softmax?
     var softmaxActionProbability = function (currentStateIndex, currentAction, stateSpace) {
       var actionValues = _.pluck(options.stateSpace[currentStateIndex].actionValues, 'value');
 
@@ -44,7 +43,6 @@ var offPolicyMC = function (options) {
         expValues.push(Math.exp(actionValue));
       });
 
-//      console.log(Math.exp(currentAction.value) / numbers.basic.sum(expValues));
       return Math.exp(currentAction.value) / numbers.basic.sum(expValues);
     }
 
@@ -104,8 +102,6 @@ var offPolicyMC = function (options) {
     });
   }
 
-  console.log(_.clone(options.stateSpace));
-
   // generate an episode
   var a, s, sPrime, r;
   for (var episode = 0; episode < options.nLearning; episode++) {
@@ -152,14 +148,12 @@ var offPolicyMC = function (options) {
       if (options.stateSpace[s].pi) {
         text = options.stateSpace[s].pi.action;
       }
-//      console.log('state:', s, '\taction:', a.action, '\toptimalAction:', text, '\tstep:', innerLoopStep);
-
       // update s <- s'
       s = sPrime;
       innerLoopStep++;
 
-    } while (s !== '0_0' && innerLoopStep < 50000);
-    console.log('length of episode', innerLoopStep)
+    } while (s !== '0_0');
+    console.log('length of episode', episode, ':', innerLoopStep)
 
     var t, skip, curS, curA;
     for (var i = sARSequence.length - 1; i >= tau; i--) {
@@ -190,14 +184,13 @@ var offPolicyMC = function (options) {
           currentAction: curA,
           stateSpace: options.stateSpace
         });
-        //console.log('w:', w, 'k:', k, 'curS:', _.clone(curS), 'curA:',_.clone(curA));
       }
 
       //update N(s,a), D(s,a) and Q(s,a)
       curA.NValue += w * discountedReward((sARSequence.length - 1) - i, options.gamma);
       curA.DValue += w;
 
-      console.log('curS:', curS, '\tnew value:', curA.NValue / curA.DValue, 'r:', sARSequence[i].reward, 'w:', w, ', old vValue:', curA.value);
+      //console.log('curS:', curS, '\tnew value:', curA.NValue / curA.DValue, 'r:', sARSequence[i].reward, 'w:', w, ', old vValue:', curA.value);
 
       curA.value = curA.NValue / curA.DValue;
 
