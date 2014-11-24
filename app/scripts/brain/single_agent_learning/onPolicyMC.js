@@ -1,4 +1,4 @@
-var onPolicyMC = function() {
+var onPolicyMC = function(gamma, epsilon, n) {
 
   // get world size, state space, and actions
   var world = new World();
@@ -258,18 +258,25 @@ var onPolicyMC = function() {
   // Main Algorithm
   // =====================
 
-  var epsilon = 0.1;
-  var gamma = 0.9;
+  if (epsilon == undefined) {
+    var epsilon = 0.1;
+  }
+
+  if (gamma == undefined) {
+    var gamma = 0.9;
+  }
+
+  if (n == undefined) {
+    var n = 100;
+  }
 
   // Initialize Q, Returns, and Policy
   var result = initialization(epsilon);
   var Q = result.Q;
   var Returns = result.Returns;
   var policy = result.policy;
-  var n = 100;
   var startState = stateSpace['5_5'];
   var result = [];
-  // console.log(policy['5_5'].greedy.action);
 
 
   // repeat forever
@@ -302,7 +309,6 @@ var onPolicyMC = function() {
       // update policy
       policy = updatePolicy(policy, actionStar, uniqueStates[i]);
     }
-    // console.log('optimum first action = ', policy['5_5'].greedy.action);
   }
 
   drawChart(result, 100);
