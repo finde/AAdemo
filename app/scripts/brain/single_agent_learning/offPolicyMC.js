@@ -28,6 +28,8 @@ var offPolicyMC = function (options) {
 
   var predatorActions = world.getPredatorActions();
   var preyActions = world.getPreyActions();
+  
+  var output = [];
 
   var discountedReward = function (step, discountFactor, reward) {
     return reward * Math.pow(discountFactor, step);
@@ -156,7 +158,9 @@ var offPolicyMC = function (options) {
       innerLoopStep++;
 
     } while (s !== '0_0');
-    console.log('length of episode', episode, 'of', options.nLearning, ':', innerLoopStep)
+    //console.log('length of episode', episode, 'of', options.nLearning, ':', innerLoopStep)
+    //output.push('(' + episode + ', ' + innerLoopStep + ')');
+    output.push(innerLoopStep);
     stepsSum += innerLoopStep;
 
     var t, skip, curS, curA;
@@ -206,6 +210,27 @@ var offPolicyMC = function (options) {
     } // endfor each sARSequence
 
   }
-  console.log('stepsSum:', stepsSum, 'average:', stepsSum / options.nLearning);
-  return options.stateSpace;
+  //console.log(output.join("\n"));
+  //console.log('stepsSum:', stepsSum, 'average:', stepsSum / options.nLearning);
+  //return options.stateSpace;
+  return output;
 };
+
+var offPolicyWrapper = function () {
+  var results = [];
+  var x, partialSum, step = 5;
+  for (var i= step; i<=100; i+=step) {
+    x = offPolicyMC({nLearning: i, actionSelector: 'greedy', gamma: 0.3});
+    partialSum = 0;
+    for (var j = i*0.2; j<i; j++) {
+      partialSum += x[j];
+    }
+    results.push(partialSum/(0.8*i));
+  }
+  
+  var string = [];
+  for (var i=0; i<results.length; i++) {
+    string += '(' + step*(i+1) + ', ' + results[i] + ')\n';
+  }
+  return string;
+}
