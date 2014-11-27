@@ -1,0 +1,73 @@
+<div class="container">
+	<div id="content" ng-controller='GameController as ctrl'>
+		<!-- heading -->
+		<div id="heading" class="row">
+			<h1 class="title">Single Agent Learning</h1>
+		</div>
+
+		<!-- config form -->
+		<div id="setting-box" class="row">
+			<div class="cols-xs-12">
+				<label class="col-xs-4">#Trials:</label>
+				<div class="col-xs-8">
+					<input class="form-control" ng-model="ctrl.config.nLearning">
+				</div>
+			</div>
+
+			<div class="cols-xs-12">
+				<label class="col-xs-4">Discount Factor:</label>
+				<div class="col-xs-8">
+					<input class="form-control" ng-model="ctrl.config.gamma">
+				</div>
+			</div>
+
+			<div class="cols-xs-12">
+				<label class="col-xs-4">Learning Rate:</label>
+				<div class="col-xs-8">
+					<input class="form-control" ng-model="ctrl.config.alpha">
+				</div>
+			</div>
+
+			<div class="cols-xs-12">
+				<label class="col-xs-4">Init Q-values:</label>
+				<div class="col-xs-8">
+					<input class="form-control" ng-model="ctrl.config.initQ">
+				</div>
+			</div>
+
+			<div class="cols-xs-12">
+				<label class="col-xs-4">Soft Policy:</label>
+				<div class="col-xs-8">
+					<input class="form-control" ng-model="ctrl.config.actionSelector">
+				</div>
+			</div>
+
+			<div class="cols-xs-12">
+				<label class="col-xs-4">Soft Policy Factor:</label>
+				<div class="col-xs-8">
+					<input class="form-control" ng-model="ctrl.config.epsilon">
+				</div>
+			</div>
+
+		</div>
+
+		<div class="row">
+			<div class="cols-xs-12 text-right">
+				<button ng-click='ctrl.runInference(ctrl.config)' ng-disabled="ctrl.isBusy" class="btn restart-button">Inference</button>
+				<button ng-click='ctrl.sarsa()' ng-disabled="ctrl.isBusy" class="btn restart-button">Sarsa</button>
+			</div>
+		</div>
+
+		<div class="learning row">
+			<div class="cols-xs-12" style="height: 300px">
+				<highchart id="chart1" config="ctrl.salGraphAverageSteps"></highchart>
+			</div>
+			<div class="cols-xs-12" style="height: 300px">
+				<highchart id="chart1" config="ctrl.salGraphOptimalActions"></highchart>
+			</div>
+
+			<textarea id="stateSpaceOutput" class="col-xs-12"></textarea>
+		</div>
+
+	</div>
+</div>
