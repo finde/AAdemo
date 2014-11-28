@@ -22,7 +22,7 @@ angular
       });
 
   })
-  .controller('GameController', function (GameManager, $timeout, $interval) {
+  .controller('GameController', function (GameManager, $timeout, $interval, SingleAgentLearningService) {
     var self = this;
     var simulator;
     this.game = GameManager;
@@ -226,17 +226,7 @@ angular
     this.config.actionSelector = this.config.actionSelector || 'softmax';
     this.config.epsilon = this.config.epsilon || 0.1;
     this.config.initQ = this.config.initQ || 15;
-
-    this.qlearning = function () {
-      averagingFunction(10, QLearning, self.config, function (results) {
-        self.trials.push({
-          config: _.clone(self.config),
-          result: results
-        });
-
-        updateGraph();
-      });
-    };
+    this.config.algorithm = this.config.algorithm || 'qlearning';
 
     this.runInference = function (config) {
       console.log(config);
@@ -249,88 +239,12 @@ angular
       }
 
       // find the requested inference
-    };
+      console.log('requesting');
 
-    this.sarsa = function () {
-      console.log('call parent function');
-      averagingFunction(10, Sarsa, self.config, function (results) {
-
-        console.log('done');
-
-        self.trials.push({
-          config: _.clone(self.config),
-          result: results
-        });
-
-        updateGraph();
-      });
-    };
-
-    var guid = (function () {
-      function s4() {
-        return Math.floor((1 + Math.random()) * 0x10000)
-          .toString(16)
-          .substring(1);
-      }
-
-      return function () {
-        return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-          s4() + '-' + s4() + s4() + s4();
-      };
-    })();
-    var averagingFunction = function (nTimes, learningFunction, opts, cb) {
-      nTimes = nTimes || 5;
-      var queue = [];
-      for (var i = 0; i < nTimes; i++) {
-        var id = guid();
-        console.log('register #' + id);
-
-        var parallelFn = function (id) {
-          return function (callback) {
-            console.log('>> process #' + id);
-            return new learningFunction(opts, id, callback);
-          }
-        };
-
-        queue.push(new parallelFn(id));
-      }
-
-      // run async
-      async.parallel(queue,
-        function (err, results) {
-          var _results = _.clone(_.first(results));
-
-          // for each trial
-          for (var j = 1; j < _.size(results); j++) {
-            var r = results[j];
-
-            // sum each episode
-            for (var e = 0; e < _.size(r); e++) {
-              _results[e].step += r[e].step;
-              _results[e].optimalAction += r[e].optimalAction;
-            }
-          }
-
-          for (var e = 0; e < _.size(_results); e++) {
-            _results[e].step /= nTimes;
-            _results[e].optimalAction /= nTimes;
-            _results[e].optimalActionPercentage = parseFloat((_results[e].optimalAction / _results[e].step * 100).toFixed(2))
-          }
-
-
-          // average the results
-          cb(_results);
-        });
-    };
-    var updateGraph = function () {
-      self.salGraphOptimalActions.series.push({
-        name: '#' + (self.salGraphOptimalActions.series.length + 1),
-        data: _.pluck(_.last(self.trials).result, 'optimalActionPercentage')
-      });
-
-      self.salGraphAverageSteps.series.push({
-        name: '#' + (self.salGraphAverageSteps.series.length + 1),
-        data: _.pluck(_.last(self.trials).result, 'step')
+      // TODO:: show loading
+      SingleAgentLearningService.inferrence(config, function (err, respond) {
+        self.salGraphOptimalActions.series = respond.optimalActionPercentage.series;
+        self.salGraphAverageSteps.series = respond.averageSteps.series;
       });
     };
 
@@ -360,6 +274,6 @@ angular
       title: {
         text: 'Performance Metric (step until terminal)'
       },
-      xAxis: {currentMin: 0, currentMax: 100, minRange: 5}
+      xAxis: {minRange: 5}
     }
   });
