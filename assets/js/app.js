@@ -221,20 +221,21 @@ angular
 
     this.config = {};
     this.config.nLearning = this.config.nLearning || 100;
-    this.config.alpha = this.config.alpha || 0.1;
-    this.config.gamma = this.config.gamma || 0.1;
-    this.config.actionSelector = this.config.actionSelector || 'softmax';
+    this.config.alpha = this.config.alpha || 0.5;
+    this.config.gamma = this.config.gamma || 0.5;
+    this.config.actionSelector = this.config.actionSelector || 'greedy';
     this.config.epsilon = this.config.epsilon || 0.1;
     this.config.initQ = this.config.initQ || 15;
     this.config.algorithm = this.config.algorithm || 'qlearning';
+    this.config.averagingFactor = this.config.averagingFactor || 5;
 
     this.runInference = function (config) {
+      self.isBusy = true;
       console.log(config);
 
       // validate the input
       for (var propertyName in config) {
         console.log(propertyName);
-
         console.log(config[propertyName]);
       }
 
@@ -245,6 +246,8 @@ angular
       SingleAgentLearningService.inferrence(config, function (err, respond) {
         self.salGraphOptimalActions.series = respond.optimalActionPercentage.series;
         self.salGraphAverageSteps.series = respond.averageSteps.series;
+
+        self.isBusy = false;
       });
     };
 

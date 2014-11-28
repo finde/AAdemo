@@ -6,13 +6,15 @@
  * @param epsilon = action selection variable
  * @constructor
  */
-var Sarsa = function (options, callback) {
-
-  console.log(options);
+module.exports = function (options, callback) {
 
   if (!options) {
     options = {};
   }
+
+  var numbers = require('numbers');
+
+  console.log('start #' + options.id);
 
   options.results = [];
 
@@ -133,7 +135,8 @@ var Sarsa = function (options, callback) {
       a = aPrime;
 
       innerLoopStep++;
-    } while (s !== '0_0');
+    } while (s !== '0_0' && innerLoopStep < 10000);
+    // we limit it to 10k to prevent the apps freeze
 
     var _result = {
       step: innerLoopStep,
@@ -142,12 +145,9 @@ var Sarsa = function (options, callback) {
     };
 
     options.results.push(_result);
-
-//    console.log('episode:', episode, innerLoopStep, optimalAction, _result.optimalActionPercentage + '%');
   }
 
-//  console.log('best:', numbers.basic.min(_.pluck(options.results, 'step')));
-  console.log('Done, #' + id);
+  console.log('done #' + options.id);
 
   return callback(null, options.results);
 };

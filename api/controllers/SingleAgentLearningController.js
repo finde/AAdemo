@@ -9,15 +9,15 @@ var singleAgentLearning = require('../lib/single_agent_learning');
 module.exports = {
   inferring: function (req, res) {
     var config = req.param('config') || {};
-    console.log(req.param('config'))
+    console.log(req.param('config'));
 
-    config.nLearning = config.nLearning || 100;
-    config.alpha = config.alpha || 0.1;
-    config.gamma = config.gamma || 0.1;
-    config.actionSelector = config.actionSelector || 'softmax';
-    config.epsilon = config.epsilon || 0.1;
-    config.initQ = config.initQ || 15;
-    config.algorithm = config.algorithm || 'qlearning';
+    config.nLearning = req.param('nLearning') || config.nLearning || 100;
+    config.alpha = req.param('alpha') || config.alpha || 0.1;
+    config.gamma = req.param('gamma') || config.gamma || 0.1;
+    config.actionSelector = req.param('actionSelector') || config.actionSelector || 'greedy';
+    config.epsilon = req.param('epsilon') || config.epsilon || 0.1;
+    config.initQ = req.param('initQ') || config.initQ || 15;
+    config.algorithm = req.param('algorithm') || config.algorithm || 'qlearning';
 
     // TODO:: find inferring
     var infer = {};
@@ -25,20 +25,19 @@ module.exports = {
       if (config.hasOwnProperty(propertyName)) {
 
         // if contain ',' then it is an infer
-        console.log(propertyName, config[propertyName]);
-        if (parseFloat(config[propertyName])) {
+        if (typeof config[propertyName] !== 'string') {
           continue;
         }
 
         var _split = _.clone(config[propertyName]).split(',');
-        if (_.size(_split) > 0) {
+        if (_.size(_split) > 1) {
           infer = {
             name: propertyName,
             values: _.map(_split, function (s) {
-              if (parseFloat(s)) {
-                return parseFloat(s);
-              } else {
+              if (propertyName === 'actionSelector' || propertyName === 'algorithm') {
                 return s.trim();
+              } else {
+                return s * 1.0;
               }
             })
           };
@@ -54,11 +53,24 @@ module.exports = {
       }
     }
 
-    var averagingFactor = 5;
+    console.log('inferring:', infer);
+
+    var averagingFactor = req.param('averagingFactor') || 20;
     async.auto(_.map(infer.values, function (v) {
         return function (callback) {
           var _config = _.clone(config);
           _config[infer.name] = v;
+
+          // ensure config is valid
+          for (var propertyName in _config) {
+            if (config.hasOwnProperty(propertyName)) {
+              if (propertyName === 'actionSelector' || propertyName === 'algorithm') {
+                _config[propertyName] = _config[propertyName].trim();
+              } else {
+                _config[propertyName] = _config[propertyName] * 1.0;
+              }
+            }
+          }
 
           Helpers.averagingFunction(averagingFactor, singleAgentLearning[_config.algorithm], _config, callback);
         }
@@ -66,30 +78,45 @@ module.exports = {
         // summarize the respond
 
         var graphData = {
-          optimalActionPercentage: {
+          averageSteps: {
             series: []
           },
-          averageSteps: {
+          optimalActionPercentage: {
             series: []
           }
         };
 
-        for (var r = 0; r < _.size(results); r++) {
-          graphData.optimalActionPercentage.series.push({
-            name: [infer.name, infer.values[r]].join('='),
-            data: _.pluck(results[r].result, 'optimalActionPercentage')
-          });
+        console.log('done');
 
-          graphData.averageSteps.series.push({
-            name: [infer.name, infer.values[r]].join('='),
-            data: _.pluck(results[r].result, 'step')
-          });
+        if (req.param('output') === 'toLatex') {
+          for (var tl = 0; tl < _.size(results); tl++) {
+            graphData.optimalActionPercentage.series.push({
+              name: [infer.name, infer.values[tl]].join('='),
+              data: _.map(_.pluck(results[tl].result, 'optimalActionPercentage'), function (v, index) { return '(' + (index + 1) + ',' + v + ')'; }).join('')
+            });
+
+            graphData.averageSteps.series.push({
+              name: [infer.name, infer.values[tl]].join('='),
+              data: _.map(_.pluck(results[tl].result, 'step'), function (v, index) { return '(' + (index + 1) + ',' + v + ')'; }).join('')
+            });
+          }
         }
+        else {
+          for (var r = 0; r < _.size(results); r++) {
+            graphData.optimalActionPercentage.series.push({
+              name: [infer.name, infer.values[r]].join('='),
+              data: _.pluck(results[r].result, 'optimalActionPercentage')
+            });
 
-        return res.json(graphData);
+            graphData.averageSteps.series.push({
+              name: [infer.name, infer.values[r]].join('='),
+              data: _.pluck(results[r].result, 'step')
+            });
+          }
+        }
+        return res.json(_.assign(graphData, {config: config}));
       }
     )
-    ;
 
 
   }

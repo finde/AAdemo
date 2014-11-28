@@ -14,7 +14,7 @@ module.exports = function (options, callback) {
 
   var numbers = require('numbers');
 
-  console.log('start #'+options.id);
+  console.log('start #' + options.id);
 
   options.results = [];
 
@@ -132,7 +132,8 @@ module.exports = function (options, callback) {
       s = sPrime;
 
       innerLoopStep++;
-    } while (s !== '0_0');
+    } while (s !== '0_0' && innerLoopStep < 10000);
+    // we limit it to 10k to prevent the apps freeze
 
     if (!options.results) {
       options.results = [];
@@ -145,14 +146,9 @@ module.exports = function (options, callback) {
     };
 
     options.results.push(_result);
-
-//    console.log('episode:', episode, innerLoopStep, optimalAction, _result.optimalActionPercentage + '%');
   }
 
-//  console.log('best:', numbers.basic.min(_.pluck(options.results, 'step')));
-//  drawChart(options.results, 100, options.stateSpace, worldSize);
-//  $('#stateSpaceOutput').text(JSON.stringify(options));
-  console.log('done #'+options.id);
+  console.log('done #' + options.id);
 
   return callback(null, options.results);
 };

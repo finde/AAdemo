@@ -1,7 +1,20 @@
-var offPolicyMC = function (options) {
+module.exports = function (options, callback) {
   if (!options) {
     options = {};
   }
+
+  var numbers = require('numbers');
+
+  console.log('start #' + options.id);
+
+  options.results = [];
+
+  // properties
+  var world = new World();
+  world.setSize(11);
+  world.isLogEnabled = false;
+
+  var worldSize = world.getSize();
 
   if (!options.gamma) {
     options.gamma = 0.9; //todo: try different values
@@ -19,12 +32,9 @@ var offPolicyMC = function (options) {
     options.nLearning = 100;
   }
 
-  // properties
-  var world = new World();
-  world.setSize(11);
-  world.isLogEnabled = false;
-
-  var worldSize = world.getSize();
+  if (!options.initQ) {
+    options.initQ = 15;
+  }
 
   var predatorActions = world.getPredatorActions();
   var preyActions = world.getPreyActions();
@@ -112,6 +122,8 @@ var offPolicyMC = function (options) {
   for (var episode = 1; episode <= options.nLearning; episode++) {
     var sARSequence = [];
 
+    var optimalAction = 0;
+
     // Init s
     s = encodeRelativeDistance({x: 0, y: 0}, {x: 5, y: 5}, worldSize);
 
@@ -131,6 +143,12 @@ var offPolicyMC = function (options) {
 
       // resolve action a, observe r and s'
       var sAfterPredatorAction = transitionFunction(s, 'predator', a, worldSize);
+
+      // check optimal action
+      if (isOptimalAction(s, sAfterPredatorAction)) {
+        optimalAction++;
+      }
+
       r = 0.1;
       if (sAfterPredatorAction === '0_0') {
         r = world.maxReward;
@@ -157,9 +175,9 @@ var offPolicyMC = function (options) {
       s = sPrime;
       innerLoopStep++;
 
-    } while (s !== '0_0');
-    //console.log('length of episode', episode, 'of', options.nLearning, ':', innerLoopStep)
-    //output.push('(' + episode + ', ' + innerLoopStep + ')');
+    } while (s !== '0_0' && innerLoopStep < 10000);
+    // we limit it to 10k to prevent the apps freeze
+
     output.push(innerLoopStep);
     stepsSum += innerLoopStep;
 
@@ -207,30 +225,19 @@ var offPolicyMC = function (options) {
       options.stateSpace[curS].pi = options.stateSpace[curS].actionValues[maxIndex]; //creates a redundant duplicate of an action
 
       options.stateSpace[curS].actionValues[curA.index] = curA;
-    } // endfor each sARSequence
-
-  }
-  //console.log(output.join("\n"));
-  //console.log('stepsSum:', stepsSum, 'average:', stepsSum / options.nLearning);
-  //return options.stateSpace;
-  return output;
-};
-
-var offPolicyWrapper = function () {
-  var results = [];
-  var x, partialSum, step = 5;
-  for (var i= step; i<=100; i+=step) {
-    x = offPolicyMC({nLearning: i, actionSelector: 'greedy', gamma: 0.3});
-    partialSum = 0;
-    for (var j = i*0.2; j<i; j++) {
-      partialSum += x[j];
     }
-    results.push(partialSum/(0.8*i));
+    // endfor each sARSequence
+
+    var _result = {
+      step: innerLoopStep,
+      optimalAction: optimalAction,
+      optimalActionPercentage: (optimalAction / innerLoopStep * 100).toFixed(2) * 1.0
+    };
+
+    options.results.push(_result);
   }
-  
-  var string = [];
-  for (var i=0; i<results.length; i++) {
-    string += '(' + step*(i+1) + ', ' + results[i] + ')\n';
-  }
-  return string;
-}
+
+  console.log('done #' + options.id);
+
+  return callback(null, options.results);
+};
