@@ -254,6 +254,24 @@ var onPolicyMC = function(gamma, epsilon, n) {
     return policy;
   }
 
+  // calculate percentage of optimum actions
+  var calculateOptimumActions = function(episode) {
+    var nOptimalActions = 0;
+
+    for (var i = 0; i < episode.length - 1; i++) {
+      var startState = episode[i].state;
+      var predatorAction = episode[i].action;
+      var feedbackPredator = transitionFunction(startState.coord, 'predator', predatorAction, worldSize);
+
+      if (isOptimalAction(startState.id, feedbackPredator)) {
+        nOptimalActions++;
+      }
+    }
+    console.log(nOptimalActions + " / " + (episode.length - 1) + " = " + nOptimalActions / (episode.length - 1) * 100);
+
+    return nOptimalActions / (episode.length - 1) * 100;
+  }
+
   // =====================
   // Main Algorithm
   // =====================
@@ -275,17 +293,15 @@ var onPolicyMC = function(gamma, epsilon, n) {
   var Q = result.Q;
   var Returns = result.Returns;
   var policy = result.policy;
+  var episodeLengths = [];
+  var optimumActions = [];
   var startState = stateSpace['5_5'];
-  var result = [];
 
 
   // repeat forever
   for (var iter = 0; iter < n; iter++) {
-    console.log('iteration = ', iter);
     // generate episode using policy
     var episode = generateEpisode(policy, Q, startState);
-    result.push(episode.length);
-    console.log('episode length = ', episode.length);
 
     // for each state,action pair in the episode
     for(var i = 0; i < episode.length - 1; i++) {
@@ -309,11 +325,101 @@ var onPolicyMC = function(gamma, epsilon, n) {
       // update policy
       policy = updatePolicy(policy, actionStar, uniqueStates[i]);
     }
+
+    console.log('iteration = ', iter);
+    // console.log('episode length = ', episode.length);
+
+    // calculate performance
+    episodeLengths.push(episode.length);
+    optimumActions.push(calculateOptimumActions(episode));
   }
 
-  drawChart(result, 100);
-  console.log('episode = ', episode);
-  console.log('policy = ', policy);
+  return {gamma: gamma, epsilon: epsilon, episodeLengths: episodeLengths, optimumActions: optimumActions};
+}
 
-  return result;
+var tuneParamOnPolicyMC = function() {
+  var gamma = [0.1, 0.5, 0.9];
+  var epsilon = [0.1, 0.5, 0.9];
+  var n = 100;
+  var performances = [];
+
+  var iter = 0;
+
+  for(var i = 0; i < gamma.length; i++) {
+    for (var j = 0; j < epsilon.length; j++) {
+      var result = onPolicyMC(gamma[i], epsilon[j], n);
+
+      // parse result
+      var coordinate = "";
+      for (var k = 0; k < n; k++) {
+        coordinate += "(" + (k + 1) + "," + result.episodeLengths[k] + ")";
+      }
+
+      performances.push({result: result, coordinate: coordinate});
+
+      console.log('scenario = ', iter);
+      iter++;
+    }
+  }
+
+  return performances;
+}
+
+var averagePerformanceOnPolicyMC = function() {
+  var gamma = 0.9;
+  var epsilon = 0.1;
+  var n = 100;
+  var t = 10;
+  var coordinate = "";
+
+  var sumArr = Array.apply(null, Array(n)).map(function() { return 0 });
+
+  for (var i = 0; i < t; i++) {
+    console.log('trial = ', i);
+
+    var result = onPolicyMC(gamma, epsilon, n);
+
+    for (var j = 0; j < n; j++) {
+      sumArr[j] += result.episodeLengths[j];
+    }
+  }
+
+  // calculate average
+  var performance = sumArr.map(function(x) { return x / t; });
+
+  for (var i = 0; i < n; i++) {
+    coordinate += "(" + (i + 1) + "," + performance[i] + ")";
+  }
+
+  return coordinate;
+}
+
+var optimumActionsOnPolicyMC = function() {
+  var gamma = 0.9;
+  var epsilon = 0.1;
+  var n = 100;
+  var t = 10;
+  var coordinate = "";
+
+  var sumArr = Array.apply(null, Array(n)).map(function() { return 0 });
+
+  for (var i = 0; i < t; i++) {
+    console.log('trial = ', i);
+
+    var result = onPolicyMC(gamma, epsilon, n);
+
+    for (var j = 0; j < n; j++) {
+      sumArr[j] += result.optimumActions[j];
+    }
+  }
+
+  // calculate average
+  var performance = sumArr.map(function(x) { return x / t; });
+
+
+  for (var i = 0; i < n; i++) {
+    coordinate += "(" + (i + 1) + "," + performance[i] + ")";
+  }
+
+  return coordinate;
 }
