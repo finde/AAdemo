@@ -1,5 +1,5 @@
 //module.exports = function(gamma, epsilon, n) {
-module.exports = function(options, callback) {
+module.exports = function (options, callback) {
 
   if (!options) {
     options = {};
@@ -52,7 +52,7 @@ module.exports = function(options, callback) {
   // =====================
 
   // epsilon-greedy policy, one of epsilon-soft policy
-  var epsilonGreedyPolicy = function(epsilon, currentState, policy) {
+  var epsilonGreedyPolicy = function (epsilon, currentState, policy) {
     var random = Math.random();
     var action;
 
@@ -69,7 +69,7 @@ module.exports = function(options, callback) {
   };
 
   // init policy
-  var initPolicy = function() {
+  var initPolicy = function () {
     var policy = {};
 
     _.forEach(stateSpace, function (state) {
@@ -83,14 +83,14 @@ module.exports = function(options, callback) {
         }
       }
 
-      policy[state.id] = {greedy: greedy, random: random}; 
+      policy[state.id] = {greedy: greedy, random: random};
     });
 
     return policy;
   };
 
   // Initialization function
-  var initialization = function(epsilon) {
+  var initialization = function (epsilon) {
     var Q = {}
     var Returns = {};
     var policy = {};
@@ -98,12 +98,14 @@ module.exports = function(options, callback) {
 
     // initialize Q(s,a) and Returns for all states and actions
     _.forEach(stateSpace, function (state) {
-      if (state.id == '0_0')
+      if (state.id == '0_0') {
         qValue = options.initQ;
-      else
+      }
+      else {
         qValue = 0;
+      }
 
-      for(var i = 0; i < predatorActions.length; i++) {
+      for (var i = 0; i < predatorActions.length; i++) {
         var id = state.id + '_' + predatorActions[i].action;
 
         Q[id] = {
@@ -128,7 +130,7 @@ module.exports = function(options, callback) {
   };
 
   // get prey possible actions
-  var getPreyPossibleActions = function(feedbackPredatorCoord) {
+  var getPreyPossibleActions = function (feedbackPredatorCoord) {
     var preyPossibleActions = [];
 
     for (var i = 0; i < preyActions.length; i++) {
@@ -147,7 +149,7 @@ module.exports = function(options, callback) {
   };
 
   // move prey based on possible actions
-  var movePrey = function(preyPossibleActions) {
+  var movePrey = function (preyPossibleActions) {
     var random = Math.random();
     var action;
 
@@ -162,7 +164,7 @@ module.exports = function(options, callback) {
   };
 
   // generate episode under given policy
-  var generateEpisode = function(policy, Q, startState) {
+  var generateEpisode = function (policy, Q, startState) {
     // pick a state as start space
     // var keys = Object.keys(stateSpace);
     // var idState = Math.floor(Math.random() * keys.length);
@@ -211,7 +213,7 @@ module.exports = function(options, callback) {
 
   // cumulative return start from state s, already taken action a
   // only start from first occurence of s,a
-  var returnFunction = function(currentStateAction, episode, gamma) {
+  var returnFunction = function (currentStateAction, episode, gamma) {
     // find first occurence of stateAction
     var idFirst = episode.indexOf(currentStateAction);
     var sumR = 0;
@@ -233,13 +235,13 @@ module.exports = function(options, callback) {
   };
 
   // average value of given array
-  var average = function(arr) {
-    var sum = arr.reduce(function(a,b){return a+b});
+  var average = function (arr) {
+    var sum = arr.reduce(function (a, b) {return a + b});
     return sum / arr.length;
   };
 
   // get unique state from given episode
-  var getUniqueState = function(episode) {
+  var getUniqueState = function (episode) {
     // minus terminal state
     var subEpisode = episode.slice(0, episode.length - 1);
     var uniqueStateId = [];
@@ -255,10 +257,10 @@ module.exports = function(options, callback) {
     return uniqueStateId;
   };
 
-  var getOptimumAction = function(stateId, Q) {
+  var getOptimumAction = function (stateId, Q) {
     // get all actions given stateId
     var keys = Object.keys(Q);
-    var subKeys = keys.filter(function(e){return Q[e].state.id == stateId});
+    var subKeys = keys.filter(function (e) {return Q[e].state.id == stateId});
     var max = 0;
     var optimumAction;
 
@@ -273,7 +275,7 @@ module.exports = function(options, callback) {
   };
 
   // update policy
-  var updatePolicy = function(oldPolicy, actionStar, stateId) {
+  var updatePolicy = function (oldPolicy, actionStar, stateId) {
     var policy = oldPolicy;
     var greedy;
     var random = [];
@@ -292,7 +294,7 @@ module.exports = function(options, callback) {
   };
 
   // calculate percentage of optimum actions
-  var calculateOptimumActions = function(episode) {
+  var calculateOptimumActions = function (episode) {
     var nOptimalActions = 0;
 
     for (var i = 0; i < episode.length - 1; i++) {
@@ -330,7 +332,7 @@ module.exports = function(options, callback) {
     var episode = generateEpisode(policy, Q, startState);
 
     // for each state,action pair in the episode
-    for(var i = 0; i < episode.length - 1; i++) {
+    for (var i = 0; i < episode.length - 1; i++) {
       var currentState = episode[i].state;
       var currentAction = episode[i].action;
 
@@ -364,7 +366,7 @@ module.exports = function(options, callback) {
       options.results = [];
     }
 
-    var innerLoopStep = episode.length -1;
+    var innerLoopStep = episode.length - 1;
     var optimalAction = calculateOptimumActions(episode);
 
     var _result = {
@@ -383,7 +385,7 @@ module.exports = function(options, callback) {
   return callback(null, options.results);
 };
 
-var tuneParamOnPolicyMC = function() {
+var tuneParamOnPolicyMC = function () {
   var gamma = [0.1, 0.5, 0.9];
   var epsilon = [0.1, 0.5, 0.9];
   var n = 100;
@@ -391,7 +393,7 @@ var tuneParamOnPolicyMC = function() {
 
   var iter = 0;
 
-  for(var i = 0; i < gamma.length; i++) {
+  for (var i = 0; i < gamma.length; i++) {
     for (var j = 0; j < epsilon.length; j++) {
       var result = onPolicyMC(gamma[i], epsilon[j], n);
 
@@ -411,14 +413,14 @@ var tuneParamOnPolicyMC = function() {
   return performances;
 };
 
-var averagePerformanceOnPolicyMC = function() {
+var averagePerformanceOnPolicyMC = function () {
   var gamma = 0.9;
   var epsilon = 0.1;
   var n = 100;
   var t = 10;
   var coordinate = "";
 
-  var sumArr = Array.apply(null, Array(n)).map(function() { return 0 });
+  var sumArr = Array.apply(null, Array(n)).map(function () { return 0 });
 
   for (var i = 0; i < t; i++) {
     console.log('trial = ', i);
@@ -431,7 +433,7 @@ var averagePerformanceOnPolicyMC = function() {
   }
 
   // calculate average
-  var performance = sumArr.map(function(x) { return x / t; });
+  var performance = sumArr.map(function (x) { return x / t; });
 
   for (var i = 0; i < n; i++) {
     coordinate += "(" + (i + 1) + "," + performance[i] + ")";
@@ -440,14 +442,14 @@ var averagePerformanceOnPolicyMC = function() {
   return coordinate;
 }
 
-var optimumActionsOnPolicyMC = function() {
+var optimumActionsOnPolicyMC = function () {
   var gamma = 0.9;
   var epsilon = 0.1;
   var n = 100;
   var t = 10;
   var coordinate = "";
 
-  var sumArr = Array.apply(null, Array(n)).map(function() { return 0 });
+  var sumArr = Array.apply(null, Array(n)).map(function () { return 0 });
 
   for (var i = 0; i < t; i++) {
     console.log('trial = ', i);
@@ -460,7 +462,7 @@ var optimumActionsOnPolicyMC = function() {
   }
 
   // calculate average
-  var performance = sumArr.map(function(x) { return x / t; });
+  var performance = sumArr.map(function (x) { return x / t; });
 
 
   for (var i = 0; i < n; i++) {

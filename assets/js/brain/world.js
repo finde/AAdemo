@@ -121,6 +121,25 @@ var World = function () {
 
     this.isSamePosition = isSamePositions;
 
+    // new
+    this.spawnAgent = function (role, state) {
+      var _agent = new Agent(world, {
+        state: state,
+        actions: actions
+      });
+
+      this.agents = this.agents || [];
+
+      this.agents.push({
+        role: role,
+        obj: _agent
+      })
+    };
+
+    this.getAllAgents = function () {
+      return this.agents;
+    };
+
     this.spawnPredator = function (state) {
       var _predator = new Agent(world, {
         state: state,
