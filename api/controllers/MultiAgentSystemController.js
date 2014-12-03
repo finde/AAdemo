@@ -83,8 +83,8 @@ module.exports = {
 
   qlearning: function(req, res) {
 
-    var result = mas.qLearning();
-    console.log(result);
+    // var result = mas.qLearning();
+    // console.log(result);
 
     return res.json({
       status: 'ok'
