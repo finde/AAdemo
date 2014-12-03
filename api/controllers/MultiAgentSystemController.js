@@ -90,7 +90,6 @@ module.exports = {
       status: 'ok'
     });
 
->>>>>>> Stashed changes
   }
 };
 
