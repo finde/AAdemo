@@ -79,6 +79,18 @@ module.exports = {
 
 
     return res.json({});
+  },
+
+  qlearning: function(req, res) {
+
+    var result = mas.qLearning();
+    console.log(result);
+
+    return res.json({
+      status: 'ok'
+    });
+
+>>>>>>> Stashed changes
   }
 };
 
