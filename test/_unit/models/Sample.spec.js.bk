@@ -1,0 +1,79 @@
+'use strict';
+var should = require('chai').should();
+
+describe('OrderModel', function () {
+
+  describe('#merge()', function () {
+    it('should return empty array when both User and Session order are empty', function (done) {
+      Order
+        .mergeRecurringOrder({},
+        function (err, mergedOrder) {
+          should.not.exist(err);
+          should.not.exist(mergedOrder);
+          done();
+        });
+    });
+
+    //todo:: check each row
+    it('should inherit recurring order from User', function (done) {
+      Order
+        .mergeRecurringOrder({
+          fromUser: Fixture.Order.userRecurringOrder
+        },
+
+        function (err, mergedOrder) {
+          should.not.exist(err);
+          mergedOrder.rows.should.have.length(2);
+          should.exist(mergedOrder.rows[0]);
+          mergedOrder.rows[0].should.have.property('id');
+
+          done();
+        });
+    });
+
+    it('should inherit from session order', function (done) {
+      Order
+        .mergeRecurringOrder({
+          fromSession: Fixture.Order.sessionOrder
+        },
+
+        function (err, mergedOrder) {
+          should.not.exist(err);
+          mergedOrder.rows.should.have.length(3);
+
+          done();
+        });
+
+    });
+
+    it('should merge the order from session-order and user\'s-recurring-order', function (done) {
+      Order
+        .mergeRecurringOrder({
+          fromUser: Fixture.Order.userRecurringOrder,
+          fromSession: Fixture.Order.sessionOrder
+        },
+
+        function (err, mergedOrder) {
+          should.not.exist(err);
+          mergedOrder.rows.should.have.length(2);
+
+          done();
+        });
+
+    });
+
+
+  });
+
+  describe('#export()', function () {
+
+    it('should export all complete order', function (done) {
+      //todo: insert dummy data
+
+      //todo:
+      done();
+    });
+
+  });
+  // todo:: test unconfirmed order to inherited next week
+});

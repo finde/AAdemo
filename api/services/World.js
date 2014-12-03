@@ -121,19 +121,21 @@ module.exports = function () {
 
     this.isSamePosition = isSamePositions;
 
-    this.spawnPredator = function (state) {
+    this.spawnPredator = function (state, action, failFactor) {
       var _predator = new Agent(world, {
         state: state,
-        actions: this.predatorActions
+        actions: action || this.predatorActions,
+        failFactor: failFactor || 0
       });
 
       this.predators.push(_predator);
     };
 
-    this.spawnPrey = function (state) {
+    this.spawnPrey = function (state, action, failFactor) {
       var _prey = new Agent(world, {
         state: state,
-        actions: this.preyActions
+        actions: action || this.preyActions,
+        failFactor: failFactor || 0
       });
 
       this.preys.push(_prey);
@@ -237,6 +239,60 @@ module.exports = function () {
         }
 
       });
+    };
+
+    /////
+    // special for MAS
+    /////
+    this.MASstep = function (callback) {
+
+      // check terminal
+      var isTerminal = function (isDetail) {
+        var isCatch = false;
+        var isBump = false;
+
+        // -- prey collide with predator
+        _.each(world.preys, function (prey) {
+          _.each(world.predators, function (predator) {
+            if (isSamePositions(prey.state, predator.state)) {
+              isCatch = true;
+            }
+          })
+        });
+
+        // -- predator collide with other predator
+        _.each(world.predators, function (predator1) {
+          _.each(world.predators, function (predator2) {
+            if (isSamePositions(predator1.state, predator2.state)) {
+              isBump = true;
+            }
+          })
+        });
+
+        if (isDetail) {
+          return {
+            isCatch: isCatch,
+            isBump: isBump
+          }
+        }
+
+        return !!isCatch && !!isBump;
+      };
+
+      console.log(isTerminal(true))
+      if (!isTerminal()) {
+        // move predator
+        _.each(world.predators, function (predator) {
+          predator.takeActionMAS();
+        });
+
+        // move prey
+        _.each(world.preys, function (prey) {
+          prey.takeActionMAS();
+        });
+      }
+
+      return callback(isTerminal());
     };
 
     return this;

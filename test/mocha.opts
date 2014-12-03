@@ -1,0 +1,6 @@
+test/_unit/**/*.js
+
+--require chai
+--reporter landing
+--recursive
+--timeout 50000
