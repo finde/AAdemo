@@ -279,20 +279,23 @@ module.exports = function () {
         return !!isCatch || !!isBump;
       };
 
-      console.log(isTerminal(true))
+      console.log('=========================');
       if (!isTerminal()) {
         // move predator
-        _.each(world.predators, function (predator) {
-          predator.takeActionMAS();
+        _.each(world.predators, function (predator, index) {
+          var __action = predator.takeActionMAS();
+          console.log('predator ' + index, ':', __action.action);
         });
 
         // move prey
-        _.each(world.preys, function (prey) {
-          prey.takeActionMAS();
+        _.each(world.preys, function (prey, index) {
+          var __action = prey.takeActionMAS();
+          console.log('prey ' + index, ':', __action.action);
         });
       }
+      console.log('=========================', isTerminal(true), '\n');
 
-      return callback(isTerminal());
+      return callback(isTerminal(), isTerminal(true));
     };
 
     return this;

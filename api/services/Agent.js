@@ -41,15 +41,21 @@ module.exports = function (world, initSettings) {
       var _action = this.randomAction();
       var feedback = world.giveFeedback(agent.state, _action);
 
-      console.log('success', _action.action);
+//      console.log('success', _action.action);
       agent.state = feedback.state;
 
-      return feedback.state;
+      return {
+        action: _action.action,
+        state: agent.state
+      };
 
     } else {
-      console.log('fail');
+//      console.log('fail');
 
-      return agent.state;
+      return {
+        action: 'tripped',
+        state: agent.state
+      };
     }
 
   };

@@ -7,7 +7,7 @@ describe('MASController', function () {
 
     it('should be accessible', function (done) {
       sails._request
-        .post('/multiAgentSystem')
+        .post('/multiAgentSystem/randomPolicy')
         .expect(200)
         .end(function (err, res) {
 
