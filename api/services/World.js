@@ -257,16 +257,16 @@ module.exports = function () {
             if (isSamePositions(prey.state, predator.state)) {
               isCatch = true;
             }
-          })
+          });
         });
 
         // -- predator collide with other predator
-        _.each(world.predators, function (predator1) {
-          _.each(world.predators, function (predator2) {
-            if (isSamePositions(predator1.state, predator2.state)) {
+        _.each(world.predators, function (predator1, index1) {
+          _.each(world.predators, function (predator2, index2) {
+            if (index1 !== index2 && isSamePositions(predator1.state, predator2.state)) {
               isBump = true;
             }
-          })
+          });
         });
 
         if (isDetail) {
@@ -276,7 +276,7 @@ module.exports = function () {
           }
         }
 
-        return !!isCatch && !!isBump;
+        return !!isCatch || !!isBump;
       };
 
       console.log(isTerminal(true))

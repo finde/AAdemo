@@ -18,7 +18,7 @@ module.exports = {
       initPredator: [
         { x: 0, y: 0},
         { x: 10, y: 10},
-        { x: 10, y: 0},
+//        { x: 10, y: 0},
         { x: 0, y: 10}
       ],
       initPrey: [
@@ -54,29 +54,6 @@ module.exports = {
     };
 
     masStep();
-
-//    _.each([1, 2, 3, 4, 5], function () {
-//      console.log(_.pluck(getAgents().predators, 'state'));
-//      console.log(_.pluck(getAgents().preys, 'state'));
-//
-//      if (rPolicy.world.MASstep()) {
-//        console.log('====converge====')
-//      }
-//    });
-
-//    async.auto(_.map([0, 1, 2, 3, 4], function () {
-//      return function (cb) {
-//        console.log(_.pluck(getAgents().predators, 'state'));
-//        console.log(_.pluck(getAgents().preys, 'state'));
-//
-//        rPolicy.world.MASstep();
-//      }
-//    }), function (err, results) {
-//      console.log(_.pluck(getAgents().predators, 'state'));
-//      console.log(_.pluck(getAgents().preys, 'state'));
-//
-//    });
-
 
     return res.json({});
   },
