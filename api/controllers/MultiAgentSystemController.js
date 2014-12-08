@@ -44,6 +44,12 @@ module.exports = {
 
   },
 
+  minimaxQ: function (req, res) {
+    var minimaxQ = mas.minimaxQ();
+
+    return res.ok();
+  },
+
   testLpSolve: function (req, res) {
     var lpsolve = require('lp_solve');
     var Row = lpsolve.Row;
