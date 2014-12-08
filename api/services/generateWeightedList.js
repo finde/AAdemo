@@ -1,4 +1,9 @@
-module.exports = function (list) { 
+/***
+ * generate a weighted list
+ * @param list  Array of probability of each action
+ * @returns {Array}
+ */
+module.exports = function (list) {
   var weighted_list = [];
 
   // Loop over weights
