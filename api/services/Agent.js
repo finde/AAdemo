@@ -59,7 +59,7 @@ module.exports = function (world, initSettings) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   };
 
-  var generateWeighedList = function (list) {
+  var generateWeighedList = function (list) { 
     var weighed_list = [];
 
     // Loop over weights

@@ -79,6 +79,11 @@ module.exports = {
 
 
     return res.json({});
+  },
+  minimaxQ: function (req, res) {
+    var mmQ = mas.minimaxQ();
+    
+    res.ok();
   }
 };
 
