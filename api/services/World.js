@@ -257,16 +257,16 @@ module.exports = function () {
             if (isSamePositions(prey.state, predator.state)) {
               isCatch = true;
             }
-          })
+          });
         });
 
         // -- predator collide with other predator
-        _.each(world.predators, function (predator1) {
-          _.each(world.predators, function (predator2) {
-            if (isSamePositions(predator1.state, predator2.state)) {
+        _.each(world.predators, function (predator1, index1) {
+          _.each(world.predators, function (predator2, index2) {
+            if (index1 !== index2 && isSamePositions(predator1.state, predator2.state)) {
               isBump = true;
             }
-          })
+          });
         });
 
         if (isDetail) {
@@ -276,23 +276,26 @@ module.exports = function () {
           }
         }
 
-        return !!isCatch && !!isBump;
+        return !!isCatch || !!isBump;
       };
 
-      console.log(isTerminal(true))
+      console.log('=========================');
       if (!isTerminal()) {
         // move predator
-        _.each(world.predators, function (predator) {
-          predator.takeActionMAS();
+        _.each(world.predators, function (predator, index) {
+          var __action = predator.takeActionMAS();
+          console.log('predator ' + index, ':', __action.action);
         });
 
         // move prey
-        _.each(world.preys, function (prey) {
-          prey.takeActionMAS();
+        _.each(world.preys, function (prey, index) {
+          var __action = prey.takeActionMAS();
+          console.log('prey ' + index, ':', __action.action);
         });
       }
+      console.log('=========================', isTerminal(true), '\n');
 
-      return callback(isTerminal());
+      return callback(isTerminal(), isTerminal(true));
     };
 
     return this;
