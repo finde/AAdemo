@@ -355,6 +355,32 @@ module.exports = function (options) {
     return {predator: predatorReward, prey: preyReward};
   }
 
+  // reset position
+  var resetPosition = function (agents, agentPositions) {
+    var arr = [];
+
+    for (var i = 0, len = agentPositions.length; i < len; i++) {
+      var newAgent = _.clone(agents[i]);
+
+      var positions = _.clone(agentPositions);
+      var position = agentPositions[i];
+
+      positions.splice(positions.indexOf(position), 1);
+      var otherPositions = positions;
+      var currentStateIds = getCurrentStateId(agentPositions[i], otherPositions);
+      var joinIds = currentStateIds.join("_");
+      var currentState = newAgent.stateSpace[joinIds];
+
+      newAgent.state = position.position;
+      newAgent.previousState = newAgent.currentState;
+      newAgent.currentState = currentState;
+
+      arr.push(newAgent);
+    }
+
+    return arr;
+  }
+
 
   // =================
   // Main Algorithm
@@ -370,10 +396,13 @@ module.exports = function (options) {
   ];
   var nAgents = agentPositions.length;
 
+  var agents = initAgents(agentPositions, singleStateSpace);
+
   for (var episode = 0; episode < options.nLearning; episode++) {
 
     // repeat until terminal or innerReach
-    var agents = initAgents(agentPositions, singleStateSpace);
+    var agents = resetPosition(agents, agentPositions);
+
     var innerLoopStep = 0;
 
     do {
@@ -411,6 +440,20 @@ module.exports = function (options) {
   }
 
   console.log('done #' + options.id);
+  // for (var n = 0; n < agents.length; n++) {
+  //   var keys = Object.keys(agents[n].stateSpace);
+  //   console.log(keys.length);
+
+  //   for (var i = 0; i < keys.length; i++) {
+  //     var av = agents[n].stateSpace[keys[i]].actionValues;
+
+  //     for (var j = 0; j < av.length; j++) {
+  //       console.log(av[j].value);
+  //     }
+  //     console.log("--------------");
+  //   }
+  //   console.log("=============");
+  // }
 
   return options.results;
 };
