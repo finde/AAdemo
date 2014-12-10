@@ -78,8 +78,8 @@ module.exports = function (opt) {
   
   opt.initAlpha = opt.initAlpha ||
   {
-    predator: 0.05,
-    prey: 0.05
+    predator: 0.5,
+    prey: 0.5
   }
 
   if (!opt.epsilon) {
@@ -95,11 +95,11 @@ module.exports = function (opt) {
   }
 
   if (!opt.initQ) {
-    opt.initQ = 2;
+    opt.initQ = 1;
   }
 
   if (!opt.maxDelta) {
-    opt.maxDelta = 0.01;
+    opt.maxDelta = 0.0035;
   }
 
   var predatorActions = world.getPredatorActions();
@@ -259,7 +259,7 @@ module.exports = function (opt) {
     for (i=0; i<5; i++) {
       constraints[i] = new Row().Add(c, 1);
       for (j=0; j<5; j++) {
-        constraints[i].Add(policy[j], -1.0 * (stateSpace[state].aVals[j].aVals[i].value).toFixed(4));
+        constraints[i].Add(policy[j], Math.min(-0.001, -1.0 * (stateSpace[state].aVals[j].aVals[i].value).toFixed(4)));
       }
       lp.addConstraint(constraints[i], 'LE',0, 'constraint');
     }
@@ -277,16 +277,25 @@ module.exports = function (opt) {
     
     //console.log(lp.dumpProgram());
     var string = [];
-    lp.solve();
+    var res = lp.solve();
+    if (res.code === 2) {
+      console.log(opt);
+      console.log(lp.dumpProgram());
+      console.log(state);
+      lp.setVerbese(4);
+      lp.solve();
+      return -1;
+    }
+    
     var results = [];
-    console.log('objective =', lp.getObjectiveValue())
-    console.log('probability distribution value =', lp.calculate(probDistr));
+    //console.log('objective =', lp.getObjectiveValue())
+    //console.log('probability distribution value =', lp.calculate(probDistr));
     for (var i =0; i<5; i++) {
       results.push((lp.get(policy[i])).toFixed(8) * 1.0);
-      string.push(preyActions[i].action +' '+ results[i]);
+      string += preyActions[i].action +' '+ results[i] + ' ';
       
     }
-    console.log(string);
+    //console.log(string);
     
     delete lp
     return results;
@@ -352,8 +361,8 @@ module.exports = function (opt) {
   var predatorAction, preyAction, s, sPrey, sPredator, sPrime, preyReward;
   var predatorReward, explore, alpha, newVs;
   var delta = 10000;
-  var steplog = [], olist;
-  explore = opt.initExplore;
+  var olist;
+  explore = _.clone(opt.initExplore);
   for (var episode = 0; episode < opt.nLearning && delta >= opt.maxDelta; episode++) {
     var optimalAction = 0;
     delta = 0;
@@ -371,12 +380,12 @@ module.exports = function (opt) {
       console.log('\t\t\t\t\t\t\t\t\t\tstep:', innerLoopStep);
       // choose a from s using policy derived from Q (e.e e-greedy)
       
-      debugString += ' s:'+ s;
+      debugString += 's:'+ s;
       //pick the predator action
       if (Math.random() < explore.predator) {
         //take a random action
         predatorAction = predatorActions[Math.floor(Math.random()*5)]
-        //debugString += 'pred random:'+ predatorAction.action;
+        debugString += ' pred random:'+ predatorAction.action;
         
       } else {
         //take an action according to pi[s,a]
@@ -385,14 +394,14 @@ module.exports = function (opt) {
           currentStateIndex: s,
           stateSpace: opt.predatorStateSpace
         });
-        //debugString += ' pred planned:'+ predatorAction.action;
+        debugString += ' pred planned:'+ predatorAction.action;
       }
       
       //pick the prey action
       if (Math.random() < explore.prey) {
         //take a random action
         preyAction = preyActions[Math.floor(Math.random()*5)]
-        //debugString += ' prey random: '+ predatorAction.action;
+        debugString += ' prey random: '+ predatorAction.action;
 
       } else {
         //take an action according to pi[s,a]
@@ -404,7 +413,7 @@ module.exports = function (opt) {
           currentStateIndex: s,
           stateSpace: opt.preyStateSpace
         });
-        //debugString += ' prey planned: '+ preyAction.action;
+        debugString += ' prey planned: '+ preyAction.action;
       }
       
       //execute actions
@@ -468,6 +477,7 @@ module.exports = function (opt) {
       newVs = Math.min(oList[0], oList[1], oList[2], oList[3], oList[4]);
       delta = Math.max(delta, Math.abs(newVs - opt.preyStateSpace[s].value));
       opt.preyStateSpace[s].value = newVs;
+      console.log(delta);
       
       // update alpha
       alpha.predator = alpha.predator * opt.decay.predator;
@@ -481,8 +491,8 @@ module.exports = function (opt) {
       //todo: decay explore
     } while (s !== '0_0' && innerLoopStep < stepLimit);
     if (innerLoopStep >= stepLimit) {
-      steplog.push(innerLoopStep);
-      console.log(steplog);
+      opt.results.push(innerLoopStep);
+      console.log(opt.results);
       console.log('stepLimit reached.');
       return -1;
     }
@@ -493,13 +503,12 @@ module.exports = function (opt) {
     
     // we limit it to 10k to prevent the apps freeze
     console.log(innerLoopStep);
-    steplog.push(innerLoopStep);
+    opt.results.push(innerLoopStep);
   }
   opt.predatorStateSpace = null;
   opt.preyStateSpace = null;
   console.log(opt);
   console.log(delta, opt.maxDelta);
-  console.log(steplog);
   console.log(' ');
   console.log(' ');
   console.log(' ');
