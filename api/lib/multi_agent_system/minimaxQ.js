@@ -95,7 +95,7 @@ module.exports = function (opt) {
   }
 
   if (!opt.maxDelta) {
-    opt.maxDelta = 0.001;
+    opt.maxDelta = 0.01;
   }
   
   console.log(opt);
