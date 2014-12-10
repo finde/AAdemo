@@ -1,9 +1,10 @@
 /**
  * Q-learning for Single Agent Learning
- * @param alpha = learning rate
- * @param gamma = discount factor
- * @param actionSelectionPolicy = 'greedy' or 'soft'
- * @param epsilon = action selection variable
+ * @param options.alpha = learning rate
+ * @param options.gamma = discount factor
+ * @param options.actionSelectionPolicy = 'greedy' or 'soft'
+ * @param options.epsilon = action selection variable
+ * @param options.results
  * @constructor
  */
 // module.exports = function (options, callback) {
@@ -35,23 +36,36 @@ module.exports = function (options) {
   var singleStateSpace = new OptimizedStateSpace(worldSize, 0);
 
   if (!options.gamma) {
-    options.gamma = 0.8; // 0.1, 0.5, 0.7, 0.9
+    options.gamma = {
+      'predator': 0.9,
+      'prey': 0.9
+    }; // 0.1, 0.5, 0.7, 0.9
   }
 
   if (!options.alpha) {
-    options.alpha = 0.5; // 0.1 ... 0.5
+    options.alpha = {
+      'predator': 0.5,
+      'prey': 0.5
+    }; // 0.1 ... 0.5
   }
 
+  //  only for e-greedy
   if (!options.epsilon) {
-    options.epsilon = 0.1;
+    options.epsilon = {
+      'predator': 0.1,
+      'prey': 0.1
+    }; // 0.1, 0.5, 0.7, 0.9
   }
 
   if (!options.nLearning) {
-    options.nLearning = 500;
+    options.nLearning = 5 * 1e3;
   }
 
   if (!options.actionSelector) {
-    options.actionSelector = 'softmax';
+    options.actionSelector = {
+      'predator': 'softmax',
+      'prey': 'greedy'
+    }; // 'softmax' or 'greedy'
   }
 
   if (!options.initQ) {
@@ -64,23 +78,20 @@ module.exports = function (options) {
   // =================
 
   // check terminal state
-  var checkTerminal = function(array) {
-    terminal = false;
-
+  var checkTerminal = function (array) {
     for (var i = 0, len = array.length; i < len; i++) {
       var state = array[i];
 
       if (state.id == '0_0') {
-        terminal = true;
-        break;
+        return true;
       }
     }
 
-    return terminal;
-  }
+    return false;
+  };
 
   // check terminal all agents
-  var checkTerminalAgents = function(agents) {
+  var checkTerminalAgents = function (agents) {
     var terminal = false;
 
     for (var i = 0, len = agents.length; i < len; i++) {
@@ -94,7 +105,7 @@ module.exports = function (options) {
   }
 
   // check whether prey catched
-  var catchPrey = function(agents) {
+  var catchPrey = function (agents) {
     var collision = false;
     var cat = false;
 
@@ -114,11 +125,11 @@ module.exports = function (options) {
     }
 
     return cat;
-  }
+  };
 
   // initialize Q values
-  var initQVal = function(array) {
-    var actionValues = []
+  var initQVal = function (array) {
+    var actionValues = [];
 
     // if state is not terminal, set value to 15
     _.each(possibleActions, function (action) {
@@ -132,14 +143,14 @@ module.exports = function (options) {
     });
 
     return actionValues;
-  }
+  };
 
   // initialize state space
   // Thanks to Stack Overflow
   // http://stackoverflow.com/questions/15658391/loop-through-arrays-logging-all-combinations
 
   // encode relative distance
-  var getCurrentStateId = function(position, otherPositions) {
+  var getCurrentStateId = function (position, otherPositions) {
     var ids = [];
 
     for (var i = 0, len = otherPositions.length; i < len; i++) {
@@ -147,10 +158,10 @@ module.exports = function (options) {
     }
 
     return ids;
-  }
+  };
 
   // get current state
-  var getCurrentState = function(ids) {
+  var getCurrentState = function (ids) {
     var combined = [];
     var id = ids.join("_");
 
@@ -164,7 +175,7 @@ module.exports = function (options) {
   }
 
   // initialize agents
-  var initAgents = function(agentPositions) {
+  var initAgents = function (agentPositions, agentsPastLife) {
     var agents = [];
 
     for (var i = 0, len = agentPositions.length; i < len; i++) {
@@ -177,17 +188,25 @@ module.exports = function (options) {
       var currentState = getCurrentState(currentStateIds);
 
       var stateSpace = {};
+
       stateSpace[currentStateIds.join("_")] = currentState;
 
-      var agent = new Agent(world, {
-        state: position.position,
-        failFactor: position.failFactor,
-        actions: possibleActions,
-        stateSpace: stateSpace,
-        currentState: currentState,
-        previousState: {},
-        type: position.type
-      })
+      if (typeof agentsPastLife === 'undefined') {
+        var agent = new Agent(world, {
+          state: position.position,
+          failFactor: position.failFactor,
+          actions: possibleActions,
+          stateSpace: stateSpace,
+          currentState: currentState,
+          previousState: {},
+          type: position.type
+        });
+      } else {
+        //if agents already exists, reset location only
+        agent = _.clone(agentsPastLife[i]);
+        agent.state = position.position;
+        agent.currentState = currentState;
+      }
 
       agents.push(agent);
     }
@@ -196,12 +215,12 @@ module.exports = function (options) {
   }
 
   // function that used by agent to take action
-  var agentTakeAction = function(agent) {
+  var agentTakeAction = function (agent) {
     var random = Math.random();
 
     if (random > agent.failFactor) {
-      var action = actionSelection(options.actionSelector, {
-        epsilon: options.epsilon,
+      var action = actionSelection(options.actionSelector[agent.type], {
+        epsilon: options.epsilon[agent.type],
         currentStateIndex: agent.currentState.id,
         stateSpace: agent.stateSpace
       })
@@ -213,7 +232,7 @@ module.exports = function (options) {
   }
 
   // agents take action
-  var agentsTakeAction = function(agents) {
+  var agentsTakeAction = function (agents) {
     var actions = [];
 
     for (var i = 0, len = agents.length; i < len; i++) {
@@ -253,7 +272,7 @@ module.exports = function (options) {
   }
 
   // update agent positions
-  var updateAgentsPosition = function(agents, actions) {
+  var updateAgentsPosition = function (agents, actions) {
     var arr = [];
     var newAgents = [];
 
@@ -296,21 +315,21 @@ module.exports = function (options) {
   }
 
   // update agents action values
-  var updateAgentsActionValues = function(agents, actions, reward) {
+  var updateAgentsActionValues = function (agents, actions, reward) {
     var arr = [];
 
     for (var i = 0, len = agents.length; i < len; i++) {
       var agent = agents[i];
       var action = actions[i];
 
-      arr.push(agent.updateActionValues(options.alpha, options.gamma, action, reward));
+      arr.push(agent.updateActionValues(options.alpha[agent.type], options.gamma[agent.type], action, reward));
     }
 
     return arr;
-  }
+  };
 
   // calculate rewards
-  var calculateRewards = function(agents) {
+  var calculateRewards = function (agents) {
     var predatorReward = 0;
     var preyReward = 0;
 
@@ -353,6 +372,32 @@ module.exports = function (options) {
     }
 
     return {predator: predatorReward, prey: preyReward};
+  };
+
+  // reset position
+  var resetPosition = function (agents, agentPositions) {
+    var arr = [];
+
+    for (var i = 0, len = agentPositions.length; i < len; i++) {
+      var newAgent = _.clone(agents[i]);
+
+      var positions = _.clone(agentPositions);
+      var position = agentPositions[i];
+
+      positions.splice(positions.indexOf(position), 1);
+      var otherPositions = positions;
+      var currentStateIds = getCurrentStateId(agentPositions[i], otherPositions);
+      var joinIds = currentStateIds.join("_");
+      var currentState = newAgent.stateSpace[joinIds];
+
+      newAgent.state = position.position;
+      newAgent.previousState = newAgent.currentState;
+      newAgent.currentState = currentState;
+
+      arr.push(newAgent);
+    }
+
+    return arr;
   }
 
 
@@ -364,16 +409,20 @@ module.exports = function (options) {
   var agentPositions = [
     {type: "predator", failFactor: 0, position: {x: 0, y: 0}},
     {type: "predator", failFactor: 0, position: {x: 10, y: 10}},
-    {type: "predator", failFactor: 0, position: {x: 10, y: 0}},
-    {type: "predator", failFactor: 0, position: {x: 0, y: 10}},
+//    {type: "predator", failFactor: 0, position: {x: 10, y: 0}},
+//    {type: "predator", failFactor: 0, position: {x: 0, y: 10}},
     {type: "prey", failFactor: 0.8, position: {x: 5, y: 5}},
   ];
   var nAgents = agentPositions.length;
 
-  for (var episode = 0; episode < options.nLearning; episode++) {
+  var countPrey = 0, countPredators = 0;
+  for (var episode = 1; episode <= options.nLearning; episode++) {
 
     // repeat until terminal or innerReach
-    var agents = initAgents(agentPositions, singleStateSpace);
+
+    // reset agent position to initPosition (or spawn agent on the first time)
+    var agents = initAgents(agentPositions, agents);
+
     var innerLoopStep = 0;
 
     do {
@@ -398,19 +447,49 @@ module.exports = function (options) {
       options.results = [];
     }
 
-    if (catchPrey(agents)) {
-      console.log("trial", episode);
-      console.log("number of steps", innerLoopStep);
+    var _result;
 
-      var _result = {
-        step: innerLoopStep
+    // successes
+    if (catchPrey(agents)) {
+
+      countPredators++;
+      _result = {
+        episode: episode,
+        step: innerLoopStep,
+        winner: 'predators'
       };
 
       options.results.push(_result);
+
+    } else {
+
+      countPrey++;
+      _result = {
+        episode: episode,
+        step: innerLoopStep,
+        winner: 'preys'
+      };
+
+//      options.results.push(_result);
+
     }
+
+    // tell me every 100 steps or 10% progress => evaluate the progress
+    var evalBreak = 100; //options.nLearning * 0.1;
+    if (episode % evalBreak === 0) {
+      console.log('episode:', episode,
+        (100 * countPredators / episode).toFixed(2),
+        (100 * countPrey / episode).toFixed(2));
+
+
+//      countPredators = 0;
+//      countPrey = 0;
+    }
+
   }
 
-  console.log('done #' + options.id);
+//  console.log('done #' + options.id);
+//  console.log(_(options.results).where({ 'winner': 'predators' }).size() * 100 / options.nLearning);
 
   return options.results;
 };

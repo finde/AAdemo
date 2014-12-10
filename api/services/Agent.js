@@ -113,6 +113,10 @@ module.exports = function (world, initSettings) {
 
     this.previousState.actionValues[action.index].value = newValue;
 
+    // update state space
+    var previousStateId = this.previousState.id;
+    this.stateSpace[previousStateId] = this.previousState;
+
     return this;
   }
 
