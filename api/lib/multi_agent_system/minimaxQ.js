@@ -72,8 +72,8 @@ module.exports = function (opt) {
   
   opt.gamma = opt.gamma ||
   {
-    predator: 0.6,
-    prey: 0.6
+    predator: 0.9,
+    prey: 0.9
   }
   
   opt.initAlpha = opt.initAlpha ||
@@ -86,8 +86,12 @@ module.exports = function (opt) {
     opt.epsilon = 0.1;
   }
 
+  if (!opt.verbose) {
+    opt.verbose = false;
+  }
+
   if (!opt.nLearning) {
-    opt.nLearning = 10000;
+    opt.nLearning = 1000;
   }
 
   if (!opt.actionSelector) {
@@ -99,7 +103,7 @@ module.exports = function (opt) {
   }
 
   if (!opt.maxDelta) {
-    opt.maxDelta = 0.0035;
+    opt.maxDelta = 0.03;
   }
 
   var predatorActions = world.getPredatorActions();
@@ -197,57 +201,20 @@ module.exports = function (opt) {
     }
   };
   
-  var probability = function (actionSelector, opt) {
-
-    var softmaxActionProbability = function (currentStateIndex, currentAction, stateSpace) {
-      var actionValues = _.pluck(this.stateSpace[currentStateIndex].aVals, 'pi');
-
-      var expValues = [];
-      _.each(actionValues, function (actionValue) {
-        expValues.push(Math.exp(actionValue));
-      });
-
-      return Math.exp(currentAction.value) / numbers.basic.sum(expValues);
-    }
-
-    var greedyActionProbability = function (epsilon, currentStateIndex, currentAction, stateSpace) {
-
-      var action; // action Object
-      // choose argmax q(s,a)
-      var actionValues = _.pluck(this.stateSpace[currentStateIndex].aVals, 'pi');
-      var maxValue = numbers.basic.max(actionValues);
-
-      for (var i = 0; i < actionValues.length; i++) {
-        if (actionValues[i] == maxValue) {
-          action = this.stateSpace[currentStateIndex].aVals[i];
-          break;
-        }
-      }
-
-      if (currentAction === action) {
-        return 1 - epsilon + epsilon / _.size(predatorActions);
-      } else {
-        return epsilon / _.size(predatorActions);
-      }
-    };
-
-    switch (actionSelector) {
-      case 'greedy':
-        return greedyActionProbability(opt.epsilon, opt.currentStateIndex, opt.currentAction, opt.stateSpace);
-
-      case 'softmax':
-        return softmaxActionProbability(opt.currentStateIndex, opt.currentAction, opt.stateSpace);
-    }
+  var probability = function (aVals, actorActions) {
+    var weighted_list = generateWeightedList(_.pluck(aVals, 'pi'));
+    return actorActions[Math.floor(Math.random(0, weighted_list.length - 1))]
   };
   
   var solvelp = function (stateSpace, state) {
     var Row = lpsolve.Row;
     var lp = new lpsolve.LinearProgram();
-    lp.setVerbose(3);
+    lp.setVerbose(opt.verbose ? 4 : 3);
     
     var policy = [];
     var c = lp.addColumn('c');
     var objective = new Row().Add(c, 1);
+    lp.setUnbounded('c');
     
     //create columns
     for (var i = 0; i<5; i++) {
@@ -259,7 +226,7 @@ module.exports = function (opt) {
     for (i=0; i<5; i++) {
       constraints[i] = new Row().Add(c, 1);
       for (j=0; j<5; j++) {
-        constraints[i].Add(policy[j], Math.min(-0.001, -1.0 * (stateSpace[state].aVals[j].aVals[i].value).toFixed(4)));
+        constraints[i].Add(policy[j], -1.0 * (stateSpace[state].aVals[j].aVals[i].value).toFixed(4));
       }
       lp.addConstraint(constraints[i], 'LE',0, 'constraint');
     }
@@ -273,7 +240,6 @@ module.exports = function (opt) {
     for (var i=0; i<5; i++) {
       lp.addConstraint(new Row().Add(policy[i], 1), 'GE', 0, 'nonegative');
     }
-    lp.addConstraint(new Row().Add(c, 1), 'GE', 0, 'nonegative'); //might not be required
     
     //console.log(lp.dumpProgram());
     var string = [];
@@ -282,10 +248,21 @@ module.exports = function (opt) {
       console.log(opt);
       console.log(lp.dumpProgram());
       console.log(state);
-      lp.setVerbese(4);
+      lp.setVerbose(4);
       lp.solve();
       return -1;
     }
+    
+//    var objValue = lp.getObjectiveValue();
+//    if (objValue < 0) {
+//      console.log(opt);
+//      console.log(lp.dumpProgram());
+//      console.log('objValue:', objValue);
+//      console.log(state);
+//      lp.setVerbose(4);
+//      lp.solve();
+//      return -1;
+//    }
     
     var results = [];
     //console.log('objective =', lp.getObjectiveValue())
@@ -360,10 +337,15 @@ module.exports = function (opt) {
   // for each episode - until n times
   var predatorAction, preyAction, s, sPrey, sPredator, sPrime, preyReward;
   var predatorReward, explore, alpha, newVs;
-  var delta = 10000;
+  var delta;
   var olist;
   explore = _.clone(opt.initExplore);
-  for (var episode = 0; episode < opt.nLearning && delta >= opt.maxDelta; episode++) {
+  
+  var isConverged = function (delta) {
+    return typeof delta !== 'undefined' && delta < 20*opt.maxDelta;
+  };
+  
+  for (var episode = 0; episode < opt.nLearning && !isConverged(sumDelta); episode++) {
     var optimalAction = 0;
     delta = 0;
     
@@ -385,16 +367,18 @@ module.exports = function (opt) {
       if (Math.random() < explore.predator) {
         //take a random action
         predatorAction = predatorActions[Math.floor(Math.random()*5)]
-        debugString += ' pred random:'+ predatorAction.action;
+        //debugString += ' pred random:'+ predatorAction.action;
         
       } else {
         //take an action according to pi[s,a]
-        predatorAction = actionSelection(opt.actionSelector, {
-          epsilon: opt.epsilon,
-          currentStateIndex: s,
-          stateSpace: opt.predatorStateSpace
-        });
-        debugString += ' pred planned:'+ predatorAction.action;
+        preyAction = probability(opt.preyStateSpace[s].aVals, preyActions);
+
+        // alternatively we can use 'softmax' or 'greedy' by uncomment code below
+        // preyAction = actionSelection(opt.actionSelector, {
+        //  epsilon: opt.epsilon,
+        //  currentStateIndex: s,
+        //  stateSpace: opt.preyStateSpace
+        //});
       }
       
       //pick the prey action
@@ -405,15 +389,14 @@ module.exports = function (opt) {
 
       } else {
         //take an action according to pi[s,a]
-        //aVals = opt.preyStateSpace[s].aVals;
-        //var weighted_list = generateWeightedList(_.pluck(aVals, 'pi'));
-        //preyAction = preyActions[Math.floor(Math.random(0, weighted_list.length - 1))]
-        preyAction = actionSelection(opt.actionSelector, {
-          epsilon: opt.epsilon,
-          currentStateIndex: s,
-          stateSpace: opt.preyStateSpace
-        });
-        debugString += ' prey planned: '+ preyAction.action;
+        predatorAction = probability(opt.predatorStateSpace[s].aVals, predatorActions);
+
+        // alternatively we can use 'softmax' or 'greedy' by uncomment code below
+        // predatorAction = actionSelection(opt.actionSelector, {
+        //  epsilon: opt.epsilon,
+        //  currentStateIndex: s,
+        //  stateSpace: opt.predatorStateSpace
+        // });
       }
       
       //execute actions
@@ -447,6 +430,8 @@ module.exports = function (opt) {
       // do linear programming
       var predatorPolicy = solvelp(opt.predatorStateSpace, s);
       var preyPolicy = solvelp(opt.preyStateSpace, s);
+      if (preyPolicy === -1 || predatorPolicy === -1)
+        return -1;
       for (var i=0; i<preyAction.length; i++) {
         opt.predatorStateSpace[s].aVals[i].pi = predatorPolicy[i];
         opt.preyStateSpace[s].aVals[i].pi = preyPolicy[i];
@@ -488,11 +473,11 @@ module.exports = function (opt) {
 
       innerLoopStep++;
       
-      //todo: decay explore
     } while (s !== '0_0' && innerLoopStep < stepLimit);
+    
     if (innerLoopStep >= stepLimit) {
+      console.log(opt);
       opt.results.push(innerLoopStep);
-      console.log(opt.results);
       console.log('stepLimit reached.');
       return -1;
     }
@@ -501,15 +486,19 @@ module.exports = function (opt) {
     explore.predator = explore.predator * 0.95;
     explore.prey = explore.prey * 0.95;
     
-    // we limit it to 10k to prevent the apps freeze
-    console.log(innerLoopStep);
-    opt.results.push(innerLoopStep);
+    opt.results.push(innerLoopStep, delta);
+    if (opt.results.length > 20) {
+      var sumDelta = 0;
+      for (var i=opt.results.length-1; i>=opt.results.length - 20; i++) {
+        sumDelta += opt.results[i];
+      }
+    }
+    
   }
+  
   opt.predatorStateSpace = null;
   opt.preyStateSpace = null;
   console.log(opt);
   console.log(delta, opt.maxDelta);
-  console.log(' ');
-  console.log(' ');
-  console.log(' ');
+  console.log('\n\n\n');
 }
