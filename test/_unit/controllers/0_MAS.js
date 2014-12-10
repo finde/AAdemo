@@ -3,7 +3,7 @@ var should = require('chai').should();
 
 describe('MASController', function () {
 
-  describe.skip('random Policy', function () {
+  describe('random Policy', function () {
 
     it('should run until terminal', function (done) {
       sails._request
@@ -22,7 +22,7 @@ describe('MASController', function () {
     });
   });
 
-  describe.skip('minimaxQ', function () {
+  describe('minimaxQ', function () {
 
     it('should run until terminal', function (done) {
       sails._request
@@ -41,7 +41,7 @@ describe('MASController', function () {
     });
   });
 
-  describe('Qlearning', function () {
+  describe.only('Qlearning', function () {
 
     it('should run until terminal', function (done) {
       sails._request

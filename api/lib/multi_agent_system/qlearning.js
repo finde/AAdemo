@@ -33,6 +33,17 @@ module.exports = function (options) {
     { index: 4, action: 'down', transition: { x: 0, y: 1 }, probability: 0.2 }
   ];
 
+  // initialize predators and prey
+  var agentPositions = [
+    {type: "predator", failFactor: 0, position: {x: 0, y: 0}},
+    {type: "predator", failFactor: 0, position: {x: 10, y: 10}},
+    {type: "predator", failFactor: 0, position: {x: 10, y: 0}},
+    {type: "predator", failFactor: 0, position: {x: 0, y: 10}},
+    {type: "prey", failFactor: 0.2, position: {x: 5, y: 5}},
+  ];
+  var nPredator = _(agentPositions).where({type: 'predator'}).size();
+  var nPrey = _(agentPositions).where({type: 'prey'}).size();
+
   var singleStateSpace = new OptimizedStateSpace(worldSize, 0);
 
   if (!options.gamma) {
@@ -58,12 +69,12 @@ module.exports = function (options) {
   }
 
   if (!options.nLearning) {
-    options.nLearning = 5 * 1e3;
+    options.nLearning = 1 * 1e5;
   }
 
   if (!options.actionSelector) {
     options.actionSelector = {
-      'predator': 'softmax',
+      'predator': 'greedy',
       'prey': 'greedy'
     }; // 'softmax' or 'greedy'
   }
@@ -151,13 +162,20 @@ module.exports = function (options) {
 
   // encode relative distance
   var getCurrentStateId = function (position, otherPositions) {
-    var ids = [];
 
-    for (var i = 0, len = otherPositions.length; i < len; i++) {
-      ids.push(encodeRelativeDistance(position.position, otherPositions[i].position, worldSize));
+    var _predators = [];
+    for (var i = 0; i < nPredator - 1; i++) {
+      _predators.push(encodeRelativeDistance(position.position, otherPositions[i].position, worldSize));
     }
+    _predators = _predators.sort();
 
-    return ids;
+    var _preys = [];
+    for (var i = nPredator - 1; i < nPredator + nPrey - 1; i++) {
+      _preys.push(encodeRelativeDistance(position.position, otherPositions[i].position, worldSize));
+    }
+    _preys = _preys.sort();
+
+    return [].concat(_predators, _preys);
   };
 
   // get current state
@@ -172,7 +190,7 @@ module.exports = function (options) {
     var currentState = {id: id, combinations: combined, actionValues: initQVal(combined)};
 
     return currentState;
-  }
+  };
 
   // initialize agents
   var initAgents = function (agentPositions, agentsPastLife) {
@@ -189,7 +207,7 @@ module.exports = function (options) {
 
       var stateSpace = {};
 
-      stateSpace[currentStateIds.join("_")] = currentState;
+      stateSpace[currentState.id] = currentState;
 
       if (typeof agentsPastLife === 'undefined') {
         var agent = new Agent(world, {
@@ -212,7 +230,7 @@ module.exports = function (options) {
     }
 
     return agents;
-  }
+  };
 
   // function that used by agent to take action
   var agentTakeAction = function (agent) {
@@ -229,7 +247,7 @@ module.exports = function (options) {
     }
 
     return action;
-  }
+  };
 
   // agents take action
   var agentsTakeAction = function (agents) {
@@ -240,7 +258,7 @@ module.exports = function (options) {
     }
 
     return actions;
-  }
+  };
 
   // update position agent
   var updatePosition = function (agent, action) {
@@ -269,7 +287,7 @@ module.exports = function (options) {
     }
 
     return {position: finalState};
-  }
+  };
 
   // update agent positions
   var updateAgentsPosition = function (agents, actions) {
@@ -312,7 +330,7 @@ module.exports = function (options) {
     }
 
     return newAgents;
-  }
+  };
 
   // update agents action values
   var updateAgentsActionValues = function (agents, actions, reward) {
@@ -374,48 +392,11 @@ module.exports = function (options) {
     return {predator: predatorReward, prey: preyReward};
   };
 
-  // reset position
-  var resetPosition = function (agents, agentPositions) {
-    var arr = [];
-
-    for (var i = 0, len = agentPositions.length; i < len; i++) {
-      var newAgent = _.clone(agents[i]);
-
-      var positions = _.clone(agentPositions);
-      var position = agentPositions[i];
-
-      positions.splice(positions.indexOf(position), 1);
-      var otherPositions = positions;
-      var currentStateIds = getCurrentStateId(agentPositions[i], otherPositions);
-      var joinIds = currentStateIds.join("_");
-      var currentState = newAgent.stateSpace[joinIds];
-
-      newAgent.state = position.position;
-      newAgent.previousState = newAgent.currentState;
-      newAgent.currentState = currentState;
-
-      arr.push(newAgent);
-    }
-
-    return arr;
-  }
-
-
   // =================
   // Main Algorithm
   // =================
 
-  // initialize predators and prey
-  var agentPositions = [
-    {type: "predator", failFactor: 0, position: {x: 0, y: 0}},
-    {type: "predator", failFactor: 0, position: {x: 10, y: 10}},
-//    {type: "predator", failFactor: 0, position: {x: 10, y: 0}},
-//    {type: "predator", failFactor: 0, position: {x: 0, y: 10}},
-    {type: "prey", failFactor: 0.8, position: {x: 5, y: 5}},
-  ];
-  var nAgents = agentPositions.length;
-
-  var countPrey = 0, countPredators = 0;
+  var countPrey = 0, countPredators = 0, lastCountPrey = 0, lastCountPredators = 0, steps = [];
   for (var episode = 1; episode <= options.nLearning; episode++) {
 
     // repeat until terminal or innerReach
@@ -459,7 +440,8 @@ module.exports = function (options) {
         winner: 'predators'
       };
 
-      options.results.push(_result);
+      steps.push(innerLoopStep);
+//      options.results.push(_result);
 
     } else {
 
@@ -475,15 +457,27 @@ module.exports = function (options) {
     }
 
     // tell me every 100 steps or 10% progress => evaluate the progress
-    var evalBreak = 100; //options.nLearning * 0.1;
+//    var evalBreak = 100;
+    var evalBreak = options.nLearning * 0.1;
     if (episode % evalBreak === 0) {
-      console.log('episode:', episode,
+      console.log('episode:', episode);
+      console.log(' = success-rate (cummulative):',
         (100 * countPredators / episode).toFixed(2),
         (100 * countPrey / episode).toFixed(2));
 
+      console.log(' = success-rate-changes (last '+evalBreak+' episodes):',
+        (100 * (countPredators-lastCountPredators) / evalBreak).toFixed(2),
+        (100 * (countPrey-lastCountPrey) / evalBreak).toFixed(2));
 
-//      countPredators = 0;
-//      countPrey = 0;
+      console.log(' = avg-success-steps/stdDev (last '+evalBreak+' episodes):',
+        numbers.statistic.mean(steps).toFixed(0),
+        numbers.statistic.standardDev(steps).toFixed(0));
+
+      console.log(' ');
+
+      steps = [];
+      lastCountPredators = _.clone(countPredators);
+      lastCountPrey = _.clone(countPrey);
     }
 
   }
