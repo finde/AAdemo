@@ -66,8 +66,8 @@ module.exports = function (opt) {
   
   opt.decay = opt.decay || 
   {
-    predator: 1,
-    prey: 1
+    predator: 0.9,
+    prey: 0.9
   };
   
   opt.gamma = opt.gamma ||
@@ -78,12 +78,8 @@ module.exports = function (opt) {
   
   opt.initAlpha = opt.initAlpha ||
   {
-    predator: 0.5,
-    prey: 0.5
-  }
-
-  if (!opt.epsilon) {
-    opt.epsilon = 0.1;
+    predator: 1,
+    prey: 1
   }
 
   if (!opt.verbose) {
@@ -94,17 +90,15 @@ module.exports = function (opt) {
     opt.nLearning = 1000;
   }
 
-  if (!opt.actionSelector) {
-    opt.actionSelector = 'softmax';
-  }
-
   if (!opt.initQ) {
     opt.initQ = 1;
   }
 
   if (!opt.maxDelta) {
-    opt.maxDelta = 0.03;
+    opt.maxDelta = 0.01;
   }
+  
+  console.log(opt);
 
   var predatorActions = world.getPredatorActions();
   var preyActions = world.getPreyActions();
@@ -358,8 +352,6 @@ module.exports = function (opt) {
     var innerLoopStep = 0;
     do {
       var debugString = [];
-      console.log('\n\t\t\t\t\t\t\t\t\tepisode:', episode, '/', opt.nLearning);
-      console.log('\t\t\t\t\t\t\t\t\t\tstep:', innerLoopStep);
       // choose a from s using policy derived from Q (e.e e-greedy)
       
       debugString += 's:'+ s;
@@ -462,11 +454,6 @@ module.exports = function (opt) {
       newVs = Math.min(oList[0], oList[1], oList[2], oList[3], oList[4]);
       delta = Math.max(delta, Math.abs(newVs - opt.preyStateSpace[s].value));
       opt.preyStateSpace[s].value = newVs;
-      console.log(delta);
-      
-      // update alpha
-      alpha.predator = alpha.predator * opt.decay.predator;
-      alpha.prey = alpha.prey * opt.decay.prey;
       
       // update s <- s'
       s = sPrime;
@@ -482,22 +469,28 @@ module.exports = function (opt) {
       return -1;
     }
     
+    // update alpha
+    alpha.predator = alpha.predator * opt.decay.predator;
+    alpha.prey = alpha.prey * opt.decay.prey;
+    
     // when commentend, explore is constant to initExplore
     explore.predator = explore.predator * 0.95;
     explore.prey = explore.prey * 0.95;
     
-    opt.results.push(innerLoopStep, delta);
+    opt.results.push({innerLoopStep: innerLoopStep, delta: delta});
     if (opt.results.length > 20) {
       var sumDelta = 0;
-      for (var i=opt.results.length-1; i>=opt.results.length - 20; i++) {
-        sumDelta += opt.results[i];
+      for (var i=opt.results.length-1; i>=opt.results.length - 20; i--) {
+        sumDelta += opt.results[i].delta;
       }
     }
+    
+    console.log('episode:', episode+1, '/', opt.nLearning, '\tstep:', innerLoopStep, '\tsumDelta:', sumDelta / 20.0);
     
   }
   
   opt.predatorStateSpace = null;
-  opt.preyStateSpace = null;
+  //opt.preyStateSpace = null;
   console.log(opt);
   console.log(delta, opt.maxDelta);
   console.log('\n\n\n');
