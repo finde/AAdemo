@@ -6,6 +6,8 @@
 var MultiAgentSystem = function () {
   this.randomPolicy = require('./randomPolicy');
   this.minimaxQ = require('./minimaxQ');
+  this.qLearning = require('./qlearning');
+
   return this;
 };
 
