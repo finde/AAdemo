@@ -12,7 +12,7 @@ module.exports = function (list) {
 
     // Loop over the list of items
     for (var j = 0; j < multiples; j++) {
-      weighted_list.push(list[i]);
+      weighted_list.push(i);
     }
   }
 

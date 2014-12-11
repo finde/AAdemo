@@ -45,7 +45,7 @@ module.exports = {
   minimaxQ: function (req, res) {
     var minimaxQ = mas.minimaxQ();
 
-    return res.ok();
+    return res.json(minimaxQ);
   },
 
   testLpSolve: function (req, res) {
