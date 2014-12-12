@@ -12,7 +12,7 @@ UvA Autonomous Agents 1 - Assignments Fall 2014
 
 This project basically consist of three parts:
 
-1. Single Agent Planning [demo](http://aa1.findexumara.com/#/single-agent-planning) <-- still under re-construction
+1. Single Agent Planning ([demo](http://aa1.findexumara.com/#/single-agent-planning)) <-- still under re-construction
 
   * Random Policy
   
@@ -22,7 +22,7 @@ This project basically consist of three parts:
   
   * Value Iteration
   
-2. Single Agent Learning [demo](http://aa1.findexumara.com/#/single-agent-learning)
+2. Single Agent Learning ([demo](http://aa1.findexumara.com/#/single-agent-learning))
 
   * QLearning
   
@@ -32,7 +32,7 @@ This project basically consist of three parts:
   
   * On-policy Monte Carlo
   
-3. Multi Agents Planning/Learning [demo](http://aa1.findexumara.com/#/multi-agent-system) <-- still under construction
+3. Multi Agents Planning/Learning ([demo](http://aa1.findexumara.com/#/multi-agent-system)) <-- still under construction
 
   * Multi-agents Random Policy
   
