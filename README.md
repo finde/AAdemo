@@ -11,59 +11,86 @@ UvA Autonomous Agents 1 - Assignments Fall 2014
 ## Short description
 
 This project basically consist of three parts:
+
 1. Single Agent Planning
+
   * Random Policy
+  
   * Policy Evaluation
+  
   * Policy Iteration
+  
   * Value Iteration
+  
 2. Single Agent Learning
+
   * QLearning
+  
   * SARSA
+  
   * Off-policy Monte Carlo
+  
   * On-policy Monte Carlo
+  
 3. Multi Agents Planning/Learning
+
   * Multi-agents Random Policy
+  
   * Independent QLearning
+  
   * MinimaxQ
  
 ## Installation guide
 
 1. Install [nodeJS](http://nodejs.org/), [Ruby](https://www.ruby-lang.org/en/), and [Sass](https://www.ruby-lang.org/en/)
+
 2. Install globally [Sails](http://sailsjs.org/#/), [Grunt](http://gruntjs.com/), [Bower](http://bower.io/), and [Mocha](http://mochajs.org/) via npm
-    ```
-    npm install -g sails grunt bower mocha
-    ```
+    
+    `$ npm install -g sails grunt bower mocha`
+
 3. Clone this repository, and go to project root folder
+
 4. Install dependencies
-    ```
-    npm install
-    bower install
-    ```
+    
+    `$ npm install`
+    
+    `$ bower install`
+    
 5. Run compile the frontend framework using grunt basic
-    ```
-    grunt basic
-    ```
+    
+    `$ grunt basic`
+    
 6. If everything is good, then run the sails
-    ```
-    sails lift
-    ```
+    
+    `$ sails lift`
+    
 7. (Optional) Alternatively you can also run the mocha
-    ```
-    mocha
-    ```
+    
+    `$ mocha`
+    
   
 ## TODO:
+
 * Fixed single-agent planning: currently the single agent planning is not completely working due after migration to nodeJS code style.
+
 * Code documentation: more comments
+
 * Code clean up: remove old codes, follow jsHint style guide.
+
 * Optimization: make it fast, fast, fast... whooosss
+
 * Redesign the interface
-* Gulp integration 
+
+* Gulp integration
+ 
 * Fork lp_solve as separate repository, currently we hack it from the node_modules
+
 * Add unit test
 
 ## Honorable contributors:
+
 * [arifqodari](https://github.com/arifqodari)
+
 * [L0ft3r](https://github.com/l0ft3r)
 
 ## Finde's side-notes:
