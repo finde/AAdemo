@@ -106,4 +106,4 @@ This project is very far from completion (see the todo-list..) :)
 The code is always evolving.
 So, if there is anyone else interesting to improve the system, feel free to do pull-request.
 I will try to complete this project on my own free time.
-I also want to implement more algorithms (not only from the assignments), so in the future I can use it for a reference :)
+I also want to implement more algorithms (not only from the assignments), so in the future I can use it as a reference :)
