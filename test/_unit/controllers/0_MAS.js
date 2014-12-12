@@ -14,6 +14,7 @@ describe('MASController', function () {
           var json = res.body;
 
           should.exist(json);
+          console.log(json);
 //          json.should.have.property('err')
 //            .equal('invalid login');
 
@@ -41,7 +42,7 @@ describe('MASController', function () {
     });
   });
 
-  describe.only('Qlearning', function () {
+  describe('Qlearning', function () {
 
     it('should run until terminal', function (done) {
       sails._request

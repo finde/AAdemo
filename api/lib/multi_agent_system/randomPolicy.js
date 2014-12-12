@@ -42,7 +42,7 @@ module.exports = function (opt) {
 
   this.world = world;
 
-  this.runSingleEpisode = function (callbackFn) {
+  this.runSingleEpisode = function (callbackFn, isCountOnly) {
 
     var getAgents = function () {
       return {
@@ -52,35 +52,46 @@ module.exports = function (opt) {
     };
 
     var steps = [];
-    var masStep = function (steps, detailConverge) {
+    var count = 0;
+    var masStep = function (steps, count, detailConverge) {
 
-      // push current state
-      steps.push({
-        converge: false,
-        state: detailConverge,
-        predators: _.pluck(getAgents().predators, 'state'),
-        preys: _.pluck(getAgents().preys, 'state')
-      });
+      count++;
+
+      if (!isCountOnly) {
+        // push current state
+        steps.push({
+          converge: false,
+          state: detailConverge,
+          predators: _.pluck(getAgents().predators, 'state'),
+          preys: _.pluck(getAgents().preys, 'state')
+        });
+      }
 
       world.MASstep(function (isConverge, detailConverge) {
         if (!isConverge) {
-          masStep(steps, detailConverge);
+          masStep(steps, count, detailConverge);
         } else {
 
-          // push current state
-          steps.push({
-            converge: true,
-            state: detailConverge,
-            predators: _.pluck(getAgents().predators, 'state'),
-            preys: _.pluck(getAgents().preys, 'state')
-          });
+          if (isCountOnly) {
 
-          callbackFn({ steps: steps});
+            callbackFn(null, { steps: count, winner: detailConverge.isBump ? 'prey' : 'predator'});
+
+          } else {
+            // push current state
+            steps.push({
+              converge: true,
+              state: detailConverge,
+              predators: _.pluck(getAgents().predators, 'state'),
+              preys: _.pluck(getAgents().preys, 'state')
+            });
+
+            callbackFn(null, { steps: steps});
+          }
         }
       });
     };
 
-    masStep(steps);
+    masStep(steps, count);
   };
 
   var self = this;

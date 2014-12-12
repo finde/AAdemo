@@ -6,31 +6,129 @@
  */
 
 var mas = require('../lib/multi_agent_system');
+var numbers = require('numbers');
 
 module.exports = {
 
-  // todo:: create report
   randomPolicy: function (req, res) {
 
     var config = req.param('config') || {};
 //    console.log(req.param('config'));
 
-    var rPolicy = mas.randomPolicy({
+    config = _.assign(config, {
       worldSize: 11,
-      initPredator: [
-        { x: 0, y: 0},
-        { x: 10, y: 10},
-        { x: 10, y: 0},
-        { x: 0, y: 10}
-      ],
+      initPredator: [],
       initPrey: [
         { x: 5, y: 5}
       ]
     });
 
-    rPolicy.runSingleEpisode(function (output) {
-      res.json(output);
-    });
+    /**
+     * Dynamics setting
+     * @param n = max 4
+     * @returns {Array}
+     */
+    var initPredator = function (n) {
+      var initLoc = [];
+      var initPredatorLoc = [
+        { x: 0, y: 0},
+        { x: 10, y: 10},
+        { x: 10, y: 0},
+        { x: 0, y: 10}
+      ];
+
+      _.each(initPredatorLoc, function (loc, index) {
+        if (index < n) {
+          initLoc.push(loc);
+        }
+      });
+
+      return initLoc;
+    };
+
+    function xrange(b0, b1, quanta) {
+      if (!quanta) { quanta = 1; }
+      if (!b1) {
+        b1 = b0;
+        b0 = 0;
+      }
+      out = [];
+      for (var i = b0, idx = 0; i < b1; i += quanta, idx++) {
+        out[idx] = i;
+      }
+      return out;
+    }
+
+//    run 15000 times for different number of predator
+    var trials = 15000;
+//    var trials = 200;
+    var groupSize = 100;
+    async.auto(
+      _.map(xrange(4), function (nPredator) {
+        return function (cb) {
+          async.auto(_.map(xrange(trials), function () {
+            return function (_cb) {
+              var rPolicy = new mas.randomPolicy(_.assign(config, {initPredator: initPredator(nPredator + 1)}));
+              rPolicy.runSingleEpisode(_cb, true);
+            };
+          }), function (err, _results) {
+            cb(null, _.toArray(_results));
+          });
+
+        };
+      }), function (err, results) {
+        var successRate = [];
+        var statistics = [];
+        var successRateDetail = [];
+
+        // for each settings
+        _.each(results, function (nPredatorTrial) {
+          var _predatorResult = _(nPredatorTrial).where({winner: 'predator'});
+          var _preyResult = _(nPredatorTrial).where({winner: 'prey'});
+
+          statistics.push({
+            'predators': {
+              standardDev: parseFloat(numbers.statistic.standardDev(_predatorResult.pluck('steps').value()).toFixed(2)),
+              mean: parseFloat(numbers.statistic.mean(_predatorResult.pluck('steps').value()).toFixed(2))
+            },
+            'prey': {
+              standardDev: parseFloat(numbers.statistic.standardDev(_preyResult.pluck('steps').value()).toFixed(2)),
+              mean: parseFloat(numbers.statistic.mean(_preyResult.pluck('steps').value()).toFixed(2))
+            },
+            'all': {
+              standardDev: parseFloat(numbers.statistic.standardDev(_.pluck(nPredatorTrial, 'steps')).toFixed(2)),
+              mean: parseFloat(numbers.statistic.mean(_.pluck(nPredatorTrial, 'steps')).toFixed(2))
+            }
+          });
+
+          var groupResults = _.groupBy(nPredatorTrial, function (r, index) { return Math.floor(index / groupSize); });
+
+          var _successRate = { 'predator': '', 'prey': ''};
+          _.each(groupResults, function (re, index) {
+            var _predatorResult2 = _(re).where({winner: 'predator'});
+            var _preyResult2 = _(re).where({winner: 'prey'});
+            var _indexMax = ((index * 1) + 1) * groupSize;
+
+            _successRate.predator += '(' + _indexMax + ',' + (_predatorResult2.size() * 100 / groupSize).toFixed(2) + ')';
+            _successRate.prey += '(' + _indexMax + ',' + (_preyResult2.size() * 100 / groupSize).toFixed(2) + ')';
+          });
+
+          successRateDetail.push(_successRate);
+
+          successRate.push({
+            'predators': (_predatorResult.size()* 100 / groupSize).toFixed(2),
+            'prey': (_preyResult.size()* 100 / groupSize).toFixed(2)
+          });
+
+        });
+
+        res.json({
+          'success-rate': successRate,
+          'statistics': statistics,
+          'detail-success-rate': successRateDetail
+        });
+      });
+
   },
 
   qlearning: function (req, res) {
