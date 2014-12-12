@@ -12,7 +12,7 @@ UvA Autonomous Agents 1 - Assignments Fall 2014
 
 This project basically consist of three parts:
 
-1. Single Agent Planning
+1. Single Agent Planning [demo](http://aa1.findexumara.com/#/single-agent-planning) <-- still under re-construction
 
   * Random Policy
   
@@ -22,7 +22,7 @@ This project basically consist of three parts:
   
   * Value Iteration
   
-2. Single Agent Learning
+2. Single Agent Learning [demo](http://aa1.findexumara.com/#/single-agent-learning)
 
   * QLearning
   
@@ -32,7 +32,7 @@ This project basically consist of three parts:
   
   * On-policy Monte Carlo
   
-3. Multi Agents Planning/Learning
+3. Multi Agents Planning/Learning [demo](http://aa1.findexumara.com/#/multi-agent-system) <-- still under construction
 
   * Multi-agents Random Policy
   
@@ -64,10 +64,18 @@ This project basically consist of three parts:
     
     `$ sails lift`
     
+7. Go to `localhost:1337`    
+    
 7. (Optional) Alternatively you can also run the mocha
     
     `$ mocha`
     
+## How to run the code?
+If you only want to see the demo, you can go to [here](http://aa1.findexumara.com)
+
+Alternatively, you can also install it locally by following the installation guide above. 
+
+Especially for the last assignment, there is no interface, so it will only accessible via CLI with `mocha`.
   
 ## TODO:
 
