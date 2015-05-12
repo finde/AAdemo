@@ -2,22 +2,16 @@ __author__ = 'finde, arif'
 
 import numpy as np
 import numpy.random as random
+from agent import Agent
 
 
 class Prey():
-    def __init__(self, x, y, cov):
-        self.x = x
-        self.y = y
+    def __init__(self, loc, cov):
+        self.loc = np.array(loc)
         self.cov = cov
 
     def move(self):
-        return np.random.multivariate_normal([self.x, self.y], self.cov, 1)
-
-
-class Predator():
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+        return random.multivariate_normal(self.loc, self.cov, 1)
 
 
 class World():
@@ -27,11 +21,12 @@ class World():
         self.predator = None
         self.prey = None
 
-    def spawn_predator(self, x, y):
+    def spawn_predator(self, loc):
+        self.predator = Agent(np.array(loc))
         pass
 
-    def spawn_prey(self, x, y, cov):
-        self.prey = Prey(x, y, cov)
+    def spawn_prey(self, loc, cov):
+        self.prey = Prey(loc, cov)
 
     def get_predator(self):
         return self.predator
@@ -44,7 +39,6 @@ class World():
 
 
 world = World(10, 10)
-world.spawn_prey(0, 0, [[1, 0], [0, 1]])
-world.spawn_predator(0, 0)
-
-world.getPrey().move()
+world.spawn_prey([0, 0], [[1, 0], [0, 1]])
+world.spawn_predator([0, 0])
+print world.get_predator().position

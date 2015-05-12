@@ -6,8 +6,8 @@ class Agent:
     """
 
     def __init__(self, init_position = None):
-        position = self.__set_init_position(init_position)
-        action_space = np.arange(-1.5, 1.5, 0.1)
+        self.position = self.__set_init_position(init_position)
+        self.action_space = np.arange(-1.5, 1.5, 0.1)
 
 
     def move(self, distance=None):
