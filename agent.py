@@ -7,7 +7,7 @@ class Agent:
 
     def __init__(self, init_position = None):
         self.position = self.__set_init_position(init_position)
-        self.action_space = np.arange(-1.5, 1.5, 0.1)
+        self.action_space = np.round(np.arange(-1.5, 1.5, 0.1), 1)
 
 
     def move(self, distance=None):
@@ -24,6 +24,8 @@ class Agent:
         self.position += distance
 
         return self.position
+
+    def
 
 
     def __set_init_position(self, init_position):
