@@ -17,8 +17,6 @@ class Agent:
         current position
         """
 
-        step = 0.1
-
         if distance is None:
             # move randomly
             distance = np.random.choice(self.action_space, 2)
@@ -26,7 +24,7 @@ class Agent:
         self.position += distance
 
 
-    def __set_init_position(init_position):
+    def __set_init_position(self, init_position):
         if init_position is None:
             return np.array([0, 0])
         else:
