@@ -23,6 +23,8 @@ class Agent:
 
         self.position += distance
 
+        return self.position
+
 
     def __set_init_position(self, init_position):
         if init_position is None:
