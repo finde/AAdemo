@@ -21,12 +21,10 @@ class Agent:
             # move randomly
             distance = np.random.choice(self.action_space, 2)
 
-        new_position = self.position + distance
-
         if toroidal_function:
-            self.position = toroidal_function(new_position)
+            self.position = toroidal_function(self.position + distance)
         else:
-            self.position = new_position
+            self.position += distance
 
         return self.position
 
