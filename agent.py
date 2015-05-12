@@ -25,9 +25,6 @@ class Agent:
 
         return self.position
 
-    def
-
-
     def __set_init_position(self, init_position):
         if init_position is None:
             return np.array([0, 0])
