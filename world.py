@@ -8,9 +8,13 @@ class World():
     def toroidal(self, state):
         if state[0] < 0:
             state[0] += self.width
+        elif state[0] > self.width:
+            state[0] -= self.width
 
         if state[1] < 0:
             state[1] += self.height
+        elif state[1] > self.height:
+            state[1] -= self.height
 
         return state
 
@@ -21,11 +25,11 @@ class World():
         self.prey = None
 
     def spawn_predator(self, position):
-        self.predator = Agent(np.array(position))
+        self.predator = Agent(np.array(position), self.toroidal)
         pass
 
     def spawn_prey(self, position, cov):
-        self.prey = Prey(position, cov)
+        self.prey = Prey(position, cov, self.toroidal)
 
     def get_predator_state(self):
         state = self.prey.position - self.predator.position
@@ -60,22 +64,22 @@ class World():
 
 world = World(10, 10)
 world.spawn_prey([0.1, 0.1], [[1, 0], [0, 1]])
-world.spawn_predator([0.0, 0.0])
+world.spawn_predator([10.0, 10.0])
 print 'init predator', world.predator.position
 print 'init predator state', world.get_predator_state()
 print ''
 
 print 'move'
-world.predator.move(toroidal_function=world.toroidal)
-world.prey.move(toroidal_function=world.toroidal)
+world.predator.move()
+world.prey.move()
 print world.predator.position
 print world.prey.position
 print world.get_predator_state()
 print ''
 
 print 'move'
-world.predator.move(toroidal_function=world.toroidal)
-world.prey.move(toroidal_function=world.toroidal)
+world.predator.move()
+world.prey.move()
 print world.predator.position
 print world.prey.position
 print world.get_predator_state()
