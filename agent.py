@@ -15,9 +15,19 @@ class Agent:
 
     def move(self, distance=None):
         """
+        real action
         action space for agent is discretized
         it can move to any point within a circle with radius 1.5 from its
         current position
+        """
+
+        self.position = self.sim_move(distance)
+
+        return self.position
+
+    def sim_move(self, distance=None):
+        """
+        simulate move
         """
 
         if distance is None:
@@ -25,11 +35,12 @@ class Agent:
             distance = np.random.choice(self.action_space, 2)
 
         if self.toroidal_function:
-            self.position = self.toroidal_function(self.position + distance)
+            new_position = self.toroidal_function(self.position + distance)
         else:
-            self.position += distance
+            new_position = self.position + distance
 
-        return self.position
+        return new_position
+
 
     def __set_init_position(self, init_position):
         if init_position is None:
@@ -46,10 +57,24 @@ class Prey(Agent):
         self.cov = cov
         self.toroidal_function = toroidal_function
 
-    def move(self, distance=None):
-        self.position = random.multivariate_normal(self.position, self.cov, 1)[0]
+    def move(self):
+        """
+        real move
+        """
+
+        self.position = self.sim_move()
+
+    def sim_move(self):
+        """
+        simulate move
+        """
+
+        new_position = random.multivariate_normal(self.position, self.cov, 1)[0]
+
         if self.toroidal_function:
-            self.position = self.toroidal_function(self.position)
+            new_position = self.toroidal_function(new_position)
+
+        return new_position
 
     def __set_init_position(self, init_position):
         if init_position is None:
