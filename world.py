@@ -2,6 +2,9 @@ from __future__ import division
 import numpy as np
 from agent import Agent, Prey
 
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import SGDRegressor
+
 __author__ = 'finde, arif'
 
 class World():
@@ -24,15 +27,25 @@ class World():
         self.predator = None
         self.prey = None
 
+        self.poly = PolynomialFeatures(degree=2)
+        self.model = SGDRegressor()
+
     def spawn_predator(self, position):
         self.predator = Agent(np.array(position), self.toroidal)
         pass
 
-    def spawn_prey(self, position, cov):
+    def spawn_prey(self, position, cov=None):
         self.prey = Prey(position, cov, self.toroidal)
 
-    def get_predator_state(self):
-        state = self.prey.position - self.predator.position
+    def get_predator_state(self, predator_position=None, prey_position=None):
+
+        if predator_position is None:
+            predator_position = self.predator.position
+
+        if prey_position is None:
+            prey_position = self.prey.position
+
+        state = prey_position - predator_position
 
         if abs(state[0]) > self.width / 2:
             if state[0] > 0:
@@ -62,6 +75,118 @@ class World():
         return 0
 
 
+    def fitted_value(self, X):
+        """
+        fitted value function
+        for now it uses polynomial regression
+        but it can also uses another technique
+        """
+
+        # X = self.poly.fit_transform(state)
+        try:
+            predicted = self.model.predict(X)
+        except ValueError:
+            predicted = np.mean(X, axis=1)
+
+        return predicted
+
+    def train_model(self, X, y):
+        """
+        train the regressor
+        """
+
+        # X = self.poly.fit_transform(states)
+        self.model.partial_fit(X, y)
+
+
+
+    """
+    fitted value iteration
+    """
+
+    def fitted_value_iteration(self, n_state=10, n_iter=100, n_sample=10, gamma=0.1):
+        """
+        planning using fitted value iteration
+        """
+
+        print 'Fitted value iterations ...'
+
+        positions = self.__sample_position(n_state)
+        X = np.zeros((n_state, 2))
+        y = np.zeros(n_state)
+
+        for it in xrange(0, n_iter):
+
+            print 'iter', it
+
+            for i in xrange(0, n_state):
+
+                self.spawn_predator(positions[i,:,0])
+                self.spawn_prey(positions[i,:,1])
+
+                X[i,:] = self.get_predator_state()
+
+                approximated_value = np.zeros(self.predator.action_space.size)
+
+                for idx, action in enumerate(self.predator.action_space):
+
+                    next_states = self.__sample_next_state(n_state, action)
+                    approximated_value[idx] = self.__approximate_value(next_states, gamma)
+
+                y[i] = np.max(approximated_value)
+
+            self.train_model(X, y)
+
+        return self.model
+
+
+    def __sample_position(self, n_state):
+        """
+        it returns n_state x 2 array
+        """
+
+        # sample initial position for predator and prey
+        x = np.random.uniform(0, self.width, (n_state,2))
+        y = np.random.uniform(0, self.height, (n_state,2))
+
+        return np.dstack((x,y))
+
+
+    def __sample_next_state(self, n_sample, action):
+        """
+        it returns n_sample x 2 array
+        """
+
+        next_states = []
+        predator_position = self.predator.sim_move(action)
+
+        for i in xrange(0, n_sample):
+
+            prey_position = self.prey.sim_move()
+
+            next_state = self.get_predator_state(predator_position, prey_position)
+
+            next_states.append(next_state)
+
+        return np.vstack(next_states)
+
+
+    def __approximate_value(self, next_states, gamma):
+        """
+        approximate value of current state given a simulated action
+        """
+
+        return np.mean(self.reward() + (gamma * self.fitted_value(next_states)))
+
+
+
+
+
+
+
+
+
+
 world = World(10, 10)
 world.spawn_prey([0.1, 0.1], [[1, 0], [0, 1]])
 world.spawn_predator([10.0, 10.0])
@@ -85,4 +210,4 @@ print world.prey.position
 print world.get_predator_state()
 print ''
 
-print world.predator.action_space
+print world.fitted_value_iteration()
