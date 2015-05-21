@@ -7,6 +7,7 @@ from sklearn.linear_model import SGDRegressor
 
 __author__ = 'finde, arif'
 
+
 class World():
     def toroidal(self, state):
         if state[0] < 0:
@@ -99,14 +100,14 @@ class World():
         self.model.partial_fit(X, y)
 
 
-
     """
     fitted value iteration
     """
 
-    def fitted_value_iteration(self, n_state=10, n_iter=100, n_sample=10, gamma=0.1):
+    def fitted_value_iteration(self, n_state=10, n_iter=100, n_sample=10, gamma=0.1, eps=1E-5):
         """
         planning using fitted value iteration
+        based on Andrew Ng
         """
 
         print 'Fitted value iterations ...'
@@ -114,27 +115,48 @@ class World():
         positions = self.__sample_position(n_state)
         X = np.zeros((n_state, 2))
         y = np.zeros(n_state)
+        y_old = -np.inf
+        it = 0
+        converge_counter = 0
 
-        for it in xrange(0, n_iter):
+        while it < n_iter:
 
+            it += 1
             print 'iter', it
 
+            # expectation
             for i in xrange(0, n_state):
 
-                self.spawn_predator(positions[i,:,0])
-                self.spawn_prey(positions[i,:,1])
+                self.spawn_predator(positions[i, :, 0])
+                self.spawn_prey(positions[i, :, 1])
 
-                X[i,:] = self.get_predator_state()
+                X[i, :] = self.get_predator_state()
 
                 approximated_value = np.zeros(self.predator.action_space.size)
 
                 for idx, action in enumerate(self.predator.action_space):
-
                     next_states = self.__sample_next_state(n_state, action)
                     approximated_value[idx] = self.__approximate_value(next_states, gamma)
 
                 y[i] = np.max(approximated_value)
 
+            y_total = np.sum(y)
+            print ' ::: ', y_total
+
+            if np.abs(y_total - y_old) < eps:
+                converge_counter += 1
+                print "potential converge ", converge_counter
+            elif converge_counter > 0:
+                converge_counter = 0
+                print "reset converge_counter"
+
+            if converge_counter >= 5:
+                print "converged at iteration %d" % it
+                break
+
+            y_old = y_total
+
+            # maximization
             self.train_model(X, y)
 
         return self.model
@@ -146,10 +168,10 @@ class World():
         """
 
         # sample initial position for predator and prey
-        x = np.random.uniform(0, self.width, (n_state,2))
-        y = np.random.uniform(0, self.height, (n_state,2))
+        x = np.random.uniform(0, self.width, (n_state, 2))
+        y = np.random.uniform(0, self.height, (n_state, 2))
 
-        return np.dstack((x,y))
+        return np.dstack((x, y))
 
 
     def __sample_next_state(self, n_sample, action):
@@ -161,7 +183,6 @@ class World():
         predator_position = self.predator.sim_move(action)
 
         for i in xrange(0, n_sample):
-
             prey_position = self.prey.sim_move()
 
             next_state = self.get_predator_state(predator_position, prey_position)
@@ -179,14 +200,6 @@ class World():
         return np.mean(self.reward() + (gamma * self.fitted_value(next_states)))
 
 
-
-
-
-
-
-
-
-
 world = World(10, 10)
 world.spawn_prey([0.1, 0.1], [[1, 0], [0, 1]])
 world.spawn_predator([10.0, 10.0])
@@ -194,20 +207,4 @@ print 'init predator', world.predator.position
 print 'init predator state', world.get_predator_state()
 print ''
 
-print 'move'
-world.predator.move()
-world.prey.move()
-print world.predator.position
-print world.prey.position
-print world.get_predator_state()
-print ''
-
-print 'move'
-world.predator.move()
-world.prey.move()
-print world.predator.position
-print world.prey.position
-print world.get_predator_state()
-print ''
-
-print world.fitted_value_iteration()
+print world.fitted_value_iteration(n_iter=1E+4)
