@@ -104,7 +104,7 @@ class World():
     fitted value iteration
     """
 
-    def fitted_value_iteration(self, n_state=10, n_iter=100, n_sample=10, gamma=0.1, eps=1E-5):
+    def fitted_value_iteration(self, n_state=10, n_iter=100, n_sample=10, gamma=0.1, eps=1E-5, verbose=False):
         """
         planning using fitted value iteration
         based on Andrew Ng
@@ -122,7 +122,6 @@ class World():
         while it < n_iter:
 
             it += 1
-            print 'iter', it
 
             # expectation
             for i in xrange(0, n_state):
@@ -140,24 +139,28 @@ class World():
 
                 y[i] = np.max(approximated_value)
 
-            y_total = np.sum(y)
-            print ' ::: ', y_total
+            if verbose or it % 1000 == 0:
+                y_total = np.sum(y)
+                print 'iter %d ::: %f' % (it, y_total)
 
-            if np.abs(y_total - y_old) < eps:
-                converge_counter += 1
-                print "potential converge ", converge_counter
-            elif converge_counter > 0:
-                converge_counter = 0
-                print "reset converge_counter"
+                if np.abs(y_total - y_old) < eps:
+                    converge_counter += 1
+                    print "   >> potential converge ", converge_counter
+                elif converge_counter > 0:
+                    converge_counter = 0
+                    print "reset converge_counter"
+
+                y_old = y_total
 
             if converge_counter >= 5:
                 print "converged at iteration %d" % it
                 break
 
-            y_old = y_total
-
             # maximization
             self.train_model(X, y)
+
+        if it >= n_iter:
+            print "not converged"
 
         return self.model
 
@@ -203,8 +206,5 @@ class World():
 world = World(10, 10)
 world.spawn_prey([0.1, 0.1], [[1, 0], [0, 1]])
 world.spawn_predator([10.0, 10.0])
-print 'init predator', world.predator.position
-print 'init predator state', world.get_predator_state()
-print ''
 
-print world.fitted_value_iteration(n_iter=1E+4)
+print world.fitted_value_iteration(n_iter=10000)
