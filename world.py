@@ -62,7 +62,6 @@ class World():
 
         return state
 
-
     def reward(self):
         # The reward the predator gets is 1 if the predator gets within 1 unit range of the prey.
         # That is the position of prey is within a circle defined by radius 1 and center as the current position of
@@ -74,7 +73,6 @@ class World():
             return 1
 
         return 0
-
 
     def fitted_value(self, X):
         """
@@ -98,7 +96,6 @@ class World():
 
         # X = self.poly.fit_transform(states)
         self.model.partial_fit(X, y)
-
 
     """
     fitted value iteration
@@ -164,7 +161,6 @@ class World():
 
         return self.model
 
-
     def __sample_position(self, n_state):
         """
         it returns n_state x 2 array
@@ -176,14 +172,13 @@ class World():
 
         return np.dstack((x, y))
 
-
     def __sample_next_state(self, n_sample, action):
         """
         it returns n_sample x 2 array
         """
 
         next_states = []
-        predator_position = self.predator.sim_move(action)
+        predator_position = self.predator.sim_move()
 
         for i in xrange(0, n_sample):
             prey_position = self.prey.sim_move()
@@ -194,17 +189,9 @@ class World():
 
         return np.vstack(next_states)
 
-
     def __approximate_value(self, next_states, gamma):
         """
         approximate value of current state given a simulated action
         """
 
         return np.mean(self.reward() + (gamma * self.fitted_value(next_states)))
-
-
-world = World(10, 10)
-world.spawn_prey([0.1, 0.1], [[1, 0], [0, 1]])
-world.spawn_predator([10.0, 10.0])
-
-print world.fitted_value_iteration(n_iter=10000)

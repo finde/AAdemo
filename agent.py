@@ -7,11 +7,10 @@ class Agent:
     class agent
     """
 
-    def __init__(self, init_position=None, toroidal_function = None):
+    def __init__(self, init_position=None, toroidal_function=None):
         self.position = self.__set_init_position(init_position)
         self.action_space = np.round(np.arange(-1.5, 1.5, 0.1), 1)
         self.toroidal_function = toroidal_function
-
 
     def move(self, distance=None):
         """
@@ -41,7 +40,6 @@ class Agent:
 
         return new_position
 
-
     def __set_init_position(self, init_position):
         if init_position is None:
             return np.array([0, 0])
@@ -57,16 +55,18 @@ class Prey(Agent):
         self.cov = cov
         self.toroidal_function = toroidal_function
 
-    def move(self):
+    def move(self, **kwargs):
         """
         real move
+        :param **kwargs:
         """
 
         self.position = self.sim_move()
 
-    def sim_move(self):
+    def sim_move(self, **kwargs):
         """
         simulate move
+        :param **kwargs:
         """
 
         new_position = random.multivariate_normal(self.position, self.cov, 1)[0]
