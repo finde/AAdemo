@@ -105,7 +105,7 @@ class World():
     fitted value iteration
     """
 
-    def fitted_value_iteration(self, n_state=10, n_iter=100, n_sample=10, gamma=0.1, eps=1E-5, verbose=False, log=True):
+    def fitted_value_iteration(self, n_state=10, n_iter=100, n_sample=10, gamma=0.1, eps=1E-4, verbose=False, log=True):
         """
         planning using fitted value iteration
         based on Andrew Ng
@@ -130,13 +130,13 @@ class World():
         positions = self.__sample_position(n_state)
         X = np.zeros((n_state, 2))
         y = np.zeros(n_state)
-        y_old = -np.inf
         it = 0
-        converge_counter = 0
 
         while it < n_iter:
 
             it += 1
+            delta = 0
+            y_old = y.copy()
 
             # expectation
             for i in xrange(0, n_state):
@@ -153,25 +153,17 @@ class World():
                     approximated_value[idx] = self.__approximate_value(next_states, gamma)
 
                 y[i] = np.max(approximated_value)
+                delta = max(delta, abs(y_old[i] - y[i]))
 
-            if verbose or it % 1000 == 0:
-                y_total = np.sum(y)
-                print 'iter %d ::: %f' % (it, y_total)
+            if verbose or it % 100 == 0:
+                print 'iter %d ::: %f' % (it, delta)
 
-                if np.abs(y_total - y_old) < eps:
-                    converge_counter += 1
-                    print "   >> potential converge ", converge_counter
-                elif converge_counter > 0:
-                    converge_counter = 0
-                    print "reset converge_counter"
-
-                y_old = y_total
-
-            if converge_counter >= 5:
+            if delta < eps * (1 - gamma) / gamma:
                 if log:
                     log_file.write('converged       : Yes at %d\n' % it)
 
                 print "converged at iteration %d" % it
+                print "Ys", y
                 break
 
             # maximization
@@ -184,8 +176,7 @@ class World():
             print "not converged"
 
         if log:
-            log_file.write('y_total         : %f\n' % y_total)
-            cPickle.dump((y_total, self.model), open(log_filename + '.cp', 'w'))
+            cPickle.dump((y, self.model), open(log_filename + '.cp', 'w'))
 
         return self.model
 
@@ -224,3 +215,39 @@ class World():
         """
 
         return np.mean(self.reward() + (gamma * self.fitted_value(next_states)))
+
+
+    """
+    exact value iteration
+    """
+
+    # def exact_value_iteration(self, n_iter=100, n_sample=10, gamma=0.1, eps=1E-5, verbose=False, log=True):
+    # """
+    # MDP value iteration
+    #     :param n_iter:
+    #     :param n_sample:
+    #     :param gamma:
+    #     :param eps:
+    #     :param verbose:
+    #     :param log:
+    #     :return:
+    #     """
+    #     states = []
+    #     R = ''
+    #     actions = ''
+    #     T = ''
+    #
+    #     V_ = dict([(s, 0) for s in states])
+    #     while True:
+    #         V = V_.copy()
+    #         delta = 0
+    #         for s in states:
+    #             V_[s] = R(s) + gamma * max([sum([p * V[s_] for (p, s_) in T(s, a)]) for a in actions(s)])
+    #             delta = max(delta, abs(V_[s] - V[s]))
+    #
+    #         if delta < eps * (1 - gamma) / gamma:
+    #             return V
+
+if __name__ == '__main__':
+    world = World(10, 10)
+    world.fitted_value_iteration(n_iter=100000, verbose=True, n_sample=100)
