@@ -9,6 +9,12 @@ from sklearn.gaussian_process import GaussianProcess
 import time
 import datetime
 import cPickle
+import sys
+import itertools
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+plt.style.use('ggplot')
 
 __author__ = 'finde, arif'
 
@@ -36,6 +42,10 @@ class World():
         # self.poly = PolynomialFeatures(degree=2)
         # self.model = SGDRegressor()
         self.model = GaussianProcess(theta0=1e-2, thetaL=1e-4, thetaU=1e-1)
+
+        self.fig = plt.figure()
+        self.ax = self.fig.gca(projection='3d')
+
 
     def spawn_predator(self, position):
         self.predator = Agent(np.array(position), self.toroidal)
@@ -122,8 +132,8 @@ class World():
             log_file.write('\n')
             log_file.write('n state         : %d \n' % n_sample)
             log_file.write('max iteration   : %d \n' % n_iter)
-            log_file.write('gamma           : %d \n' % n_sample)
-            log_file.write('eps             : %d \n' % eps)
+            log_file.write('gamma           : %f \n' % gamma)
+            log_file.write('eps             : %f \n' % eps)
             log_file.write('\n')
             log_file.write('==iter ==\n')
 
@@ -142,10 +152,9 @@ class World():
 
             # expectation
             for i in xrange(0, n_state):
-
+                sys.stdout.write(".")
                 self.spawn_predator(positions[i, :, 0])
                 self.spawn_prey(positions[i, :, 1])
-
                 X[i, :] = self.get_predator_state()
 
                 approximated_value = np.zeros(self.predator.action_space.size)
@@ -161,9 +170,10 @@ class World():
                 if log:
                     log_file.write('%d,%f' % (it, delta))
                 print 'iter %d ::: %f' % (it, delta)
+                print y
             log_file.write('\n')
 
-            if delta < eps * (1 - gamma) / gamma:
+            if delta < eps * 2 * gamma / ((1 - gamma) ** 2):
                 if log:
                     log_file.write('\nconverged       : Yes at %d\n' % it)
                     log_file.write('\n== Ys ==\n')
@@ -181,6 +191,9 @@ class World():
             # maximization
             self.train_model(X, y)
 
+            if it == 1:
+                self.__plot(X, 'g')
+
         if it >= n_iter:
             if log:
                 log_file.write('converged       : No at %d\n' % it)
@@ -190,9 +203,11 @@ class World():
         if log:
             cPickle.dump((y, self.model), open(log_filename + '.cp', 'w'))
 
+        self.__plot(X, 'r')
+        plt.show()
         return self.model
 
-    def __sample_position(self, n_state):
+    def __sample_position(self, n_state, discretized=True):
         """
         it returns n_state x 2 array
         """
@@ -201,7 +216,12 @@ class World():
         np.random.seed()
         x = np.random.uniform(0, self.width, (n_state, 2))
         y = np.random.uniform(0, self.height, (n_state, 2))
-        x[0, :] = [0, .99]
+
+        if discretized:
+            x = np.round(x, 1)
+            y = np.round(y, 1)
+
+        x[0, :] = [0, .9]
         y[0, :] = [0, 0]
 
         return np.dstack((x, y))
@@ -234,10 +254,11 @@ class World():
     """
     exact value iteration
     """
-    def get_all_states(self):
-        print []
 
-    def exact_value_iteration(self, n_iter=100, n_sample=10, gamma=0.1, eps=1E-5, verbose=False, log=True):
+    def get_all_states(self, steps=0.1):
+        return [val for val in itertools.product(np.arange(-5, 5, steps), repeat=2)]
+
+    def exact_value_iteration(self, n_iter=100, n_sample=10, gamma=0.1, eps=1E-4, verbose=False, log=True):
         """
         MDP value iteration
         :param n_iter:
@@ -261,8 +282,21 @@ class World():
                 V_[s] = R(s) + gamma * max([sum([p * V[s_] for (p, s_) in T(s, a)]) for a in actions(s)])
                 delta = max(delta, abs(V_[s] - V[s]))
 
-            if delta < eps * (1 - gamma) / gamma:
+            if delta < eps:
                 return V
+
+    def __plot(self, sampled_state, c='b'):
+        x, y = np.meshgrid(np.linspace(-5, 5), np.linspace(-5, 5))
+        z = []
+        for i in range(len(x[0])):
+            for j in range(len(x)):
+                pairwise = [x[j][i], y[j][i]]
+                z.append(self.model.predict(pairwise))
+
+        z = np.array(z).reshape(x.shape)
+        # self.ax.plot_surface(x, y, z, cmap='hot')
+        self.ax.scatter(sampled_state[:, 0], sampled_state[:, 1], self.model.predict(sampled_state), c=c)
+        # self.ax.plot_wireframe(x, y, z)
 
 
 if __name__ == '__main__':
@@ -281,5 +315,6 @@ if __name__ == '__main__':
         print ' state:              ', world.get_predator_state()
         print ''
 
-    print world.get_all_states()
-    world.fitted_value_iteration(n_iter=1000, verbose=True, n_sample=100)
+    world.fitted_value_iteration(n_iter=5, verbose=True, n_state=100, n_sample=100, gamma=0.1)
+
+    # print model.predict((x,y))
