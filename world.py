@@ -4,6 +4,7 @@ from agent import Agent, Prey
 
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import SGDRegressor
+from sklearn.gaussian_process import GaussianProcess
 
 import time
 import datetime
@@ -32,8 +33,9 @@ class World():
         self.predator = None
         self.prey = None
 
-        self.poly = PolynomialFeatures(degree=2)
-        self.model = SGDRegressor()
+        # self.poly = PolynomialFeatures(degree=2)
+        # self.model = SGDRegressor()
+        self.model = GaussianProcess(theta0=1e-2, thetaL=1e-4, thetaU=1e-1)
 
     def spawn_predator(self, position):
         self.predator = Agent(np.array(position), self.toroidal)
@@ -85,11 +87,10 @@ class World():
         but it can also uses another technique
         """
 
-        # X = self.poly.fit_transform(state)
         try:
             predicted = self.model.predict(X)
         except ValueError:
-            predicted = np.mean(X, axis=1)
+            predicted = np.zeros(X.shape[0])
 
         return predicted
 
@@ -98,8 +99,8 @@ class World():
         train the regressor
         """
 
-        # X = self.poly.fit_transform(states)
-        self.model.partial_fit(X, y)
+        # self.model.partial_fit(X, y)
+        self.model.fit(X, y)
 
     """
     fitted value iteration
@@ -200,6 +201,8 @@ class World():
         np.random.seed()
         x = np.random.uniform(0, self.width, (n_state, 2))
         y = np.random.uniform(0, self.height, (n_state, 2))
+        x[0, :] = [0, .99]
+        y[0, :] = [0, 0]
 
         return np.dstack((x, y))
 
