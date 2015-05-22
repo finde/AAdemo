@@ -69,7 +69,7 @@ class Prey(Agent):
         :param **kwargs:
         """
 
-        new_position = random.multivariate_normal(self.position, self.cov, 1)[0]
+        new_position = np.round(random.multivariate_normal(self.position, self.cov, 1)[0],1)
 
         if self.toroidal_function:
             new_position = self.toroidal_function(new_position)

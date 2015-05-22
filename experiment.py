@@ -11,4 +11,4 @@ if __name__ == '__main__':
     print "experiment with different sample"
     p = Pool(5)
     for sample in [10, 100, 1000]:
-        p.map(f, [sample for _ in xrange(10)])  # 10 times for each sample size
+        p.map(f, [sample, sample, sample])  # 10 times for each sample size

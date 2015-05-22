@@ -234,35 +234,52 @@ class World():
     """
     exact value iteration
     """
+    def get_all_states(self):
+        print []
 
-    # def exact_value_iteration(self, n_iter=100, n_sample=10, gamma=0.1, eps=1E-5, verbose=False, log=True):
-    # """
-    # MDP value iteration
-    # :param n_iter:
-    # :param n_sample:
-    # :param gamma:
-    # :param eps:
-    # :param verbose:
-    # :param log:
-    # :return:
-    # """
-    #     states = []
-    #     R = ''
-    #     actions = ''
-    #     T = ''
-    #
-    #     V_ = dict([(s, 0) for s in states])
-    #     while True:
-    #         V = V_.copy()
-    #         delta = 0
-    #         for s in states:
-    #             V_[s] = R(s) + gamma * max([sum([p * V[s_] for (p, s_) in T(s, a)]) for a in actions(s)])
-    #             delta = max(delta, abs(V_[s] - V[s]))
-    #
-    #         if delta < eps * (1 - gamma) / gamma:
-    #             return V
+    def exact_value_iteration(self, n_iter=100, n_sample=10, gamma=0.1, eps=1E-5, verbose=False, log=True):
+        """
+        MDP value iteration
+        :param n_iter:
+        :param n_sample:
+        :param gamma:
+        :param eps:
+        :param verbose:
+        :param log:
+        :return:
+        """
+        states = []
+        R = ''
+        actions = ''
+        T = ''
+
+        V_ = dict([(s, 0) for s in states])
+        while True:
+            V = V_.copy()
+            delta = 0
+            for s in states:
+                V_[s] = R(s) + gamma * max([sum([p * V[s_] for (p, s_) in T(s, a)]) for a in actions(s)])
+                delta = max(delta, abs(V_[s] - V[s]))
+
+            if delta < eps * (1 - gamma) / gamma:
+                return V
 
 
 if __name__ == '__main__':
     world = World(10, 10)
-    world.fitted_value_iteration(n_iter=100000, verbose=True, n_sample=100)
+    world.spawn_prey([5, 5], [[1, 0], [0, 1]])
+    world.spawn_predator([0.0, 0.0])
+    print 'init predator', world.predator.position
+    print 'init predator state', world.get_predator_state()
+    print ''
+
+    for _ in xrange(5):
+        world.predator.move()
+        print ' predator move to:   ', world.predator.position
+        world.prey.move()
+        print ' prey move to:       ', world.prey.position
+        print ' state:              ', world.get_predator_state()
+        print ''
+
+    print world.get_all_states()
+    world.fitted_value_iteration(n_iter=1000, verbose=True, n_sample=100)
