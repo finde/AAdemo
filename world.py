@@ -124,6 +124,7 @@ class World():
             log_file.write('gamma           : %d \n' % n_sample)
             log_file.write('eps             : %d \n' % eps)
             log_file.write('\n')
+            log_file.write('==iter ==\n')
 
         print 'Fitted value iterations ...'
 
@@ -156,14 +157,24 @@ class World():
                 delta = max(delta, abs(y_old[i] - y[i]))
 
             if verbose or it % 100 == 0:
+                if log:
+                    log_file.write('%d,%f' % (it, delta))
                 print 'iter %d ::: %f' % (it, delta)
+            log_file.write('\n')
 
             if delta < eps * (1 - gamma) / gamma:
                 if log:
-                    log_file.write('converged       : Yes at %d\n' % it)
+                    log_file.write('\nconverged       : Yes at %d\n' % it)
+                    log_file.write('\n== Ys ==\n')
+                    for i in y:
+                        log_file.write('%f\n' % i)
+                    log_file.write('\n== Xs ==\n')
+                    for (i, j) in X:
+                        log_file.write('(%f, %f)\n' % (i, j))
 
                 print "converged at iteration %d" % it
                 print "Ys", y
+                print "Xs", X
                 break
 
             # maximization
@@ -224,14 +235,14 @@ class World():
     # def exact_value_iteration(self, n_iter=100, n_sample=10, gamma=0.1, eps=1E-5, verbose=False, log=True):
     # """
     # MDP value iteration
-    #     :param n_iter:
-    #     :param n_sample:
-    #     :param gamma:
-    #     :param eps:
-    #     :param verbose:
-    #     :param log:
-    #     :return:
-    #     """
+    # :param n_iter:
+    # :param n_sample:
+    # :param gamma:
+    # :param eps:
+    # :param verbose:
+    # :param log:
+    # :return:
+    # """
     #     states = []
     #     R = ''
     #     actions = ''
@@ -247,6 +258,7 @@ class World():
     #
     #         if delta < eps * (1 - gamma) / gamma:
     #             return V
+
 
 if __name__ == '__main__':
     world = World(10, 10)
