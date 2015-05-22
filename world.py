@@ -11,6 +11,7 @@ import datetime
 import cPickle
 import sys
 import itertools
+import cPickle
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -213,7 +214,6 @@ class World():
                 print "Xs", X
                 break
 
-
             if it == 1:
                 self.__plot(X, 'g')
 
@@ -309,23 +309,9 @@ class World():
                     sys.stdout.write(".")
 
                 sIndex = '%.1f_%.1f' % (s[0], s[1])
-                #
-                # s_val = 0
-                # for a in self.get_all_actions():
-                #     val = 0
-                #     for (p, s_) in self.__exact_transition(s, a):
-                #         s_Index = '%.1f_%.1f' % (s_[0], s_[1])
-                #         if s_Index in V:
-                #             val += p * V[s_Index]
-                #         else:
-                #             print s_Index
-                #     s_val = max(s_val, val)
-                #
                 r = 0
                 if abs(s[0]) <= 1 and abs(s[1]) <= 1:
                     r = 1
-                #
-                # V_[sIndex] = r + gamma * s_val
 
                 V_[sIndex] = r + gamma * max(
                     [sum([p * V['%.1f_%.1f' % (s_[0], s_[1])] for (p, s_) in self.__exact_transition(s, a)])
@@ -336,7 +322,7 @@ class World():
             print it, delta
 
             if delta < eps:
-                return V
+                return V_
 
     def __exact_transition(self, s, a):
         p = 1
@@ -353,7 +339,7 @@ class World():
 
         z = np.array(z).reshape(x.shape)
         self.ax.plot_surface(x, y, z, cmap=cmap, alpha=0.5)
-        # self.ax.scatter(sampled_state[:, 0], sampled_state[:, 1], self.model.predict(sampled_state), c=c)
+        self.ax.scatter(sampled_state[:, 0], sampled_state[:, 1], self.model.predict(sampled_state), c=c)
         # self.ax.plot_wireframe(x, y, z)
 
 
@@ -373,7 +359,7 @@ if __name__ == '__main__':
         print ' state:              ', world.get_predator_state()
         print ''
 
-    # world.fitted_value_iteration(n_iter=20, verbose=True, n_state=100, n_sample=100, gamma=0.1)
-    world.exact_value_iteration(n_iter=20, verbose=True, gamma=0.1)
-
+    world.fitted_value_iteration(n_iter=20, verbose=True, n_state=100, n_sample=50, gamma=0.1)
+    # world.exact_value_iteration(n_iter=20, verbose=True, gamma=0.1)
+    # cPickle.dump(V, open('exact_value_iteration_I20.cp', 'w'))
     # print model.predict((x,y))
