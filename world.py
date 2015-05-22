@@ -20,18 +20,32 @@ __author__ = 'finde, arif'
 
 
 class World():
-    def toroidal(self, state):
-        if state[0] < 0:
+    def toroidal(self, position):
+        if position[0] < 0:
+            position[0] += self.width
+        elif position[0] > self.width:
+            position[0] -= self.width
+
+        if position[1] < 0:
+            position[1] += self.height
+        elif position[1] > self.height:
+            position[1] -= self.height
+
+        return position
+
+    def toroidal_state(self, state):
+        if state[0] + self.width / 2 < 0:
             state[0] += self.width
-        elif state[0] > self.width:
+        elif state[0] >= self.width / 2:
             state[0] -= self.width
 
-        if state[1] < 0:
+        if state[1] + self.height / 2 < 0:
             state[1] += self.height
-        elif state[1] > self.height:
+        elif state[1] >= self.height / 2:
             state[1] -= self.height
 
         return state
+
 
     def __init__(self, x, y):
         self.width = x
@@ -255,37 +269,72 @@ class World():
     exact value iteration
     """
 
-    def get_all_states(self, steps=0.1):
-        return [val for val in itertools.product(np.arange(-5, 5, steps), repeat=2)]
+    def get_all_states(self, steps=0.1, digit=1):
+        return np.around([val for val in itertools.product(np.arange(-5, 5, steps), repeat=2)], digit) + [0., 0.]
 
-    def exact_value_iteration(self, n_iter=100, n_sample=10, gamma=0.1, eps=1E-4, verbose=False, log=True):
+    def get_all_actions(self):
+        return np.around([val for val in itertools.product(self.predator.action_space, repeat=2)], 1) + [0., 0.]
+
+    def exact_value_iteration(self, n_iter=100, gamma=0.1, eps=1E-4, verbose=False, log=True):
         """
         MDP value iteration
         :param n_iter:
-        :param n_sample:
         :param gamma:
         :param eps:
         :param verbose:
         :param log:
         :return:
         """
-        states = []
-        R = ''
-        actions = ''
-        T = ''
+        states = self.get_all_states()
 
-        V_ = dict([(s, 0) for s in states])
-        while True:
+        V_ = dict([('%.1f_%.1f' % (s[0], s[1]), 0) for s in states])
+        it = 0
+
+        while it < n_iter:
+            it += 1
             V = V_.copy()
+
             delta = 0
-            for s in states:
-                V_[s] = R(s) + gamma * max([sum([p * V[s_] for (p, s_) in T(s, a)]) for a in actions(s)])
-                delta = max(delta, abs(V_[s] - V[s]))
+            for sidx, s in enumerate(states):
+                if sidx % 1000 == 0:
+                    sys.stdout.write(".")
+
+                sIndex = '%.1f_%.1f' % (s[0], s[1])
+                #
+                # s_val = 0
+                # for a in self.get_all_actions():
+                #     val = 0
+                #     for (p, s_) in self.__exact_transition(s, a):
+                #         s_Index = '%.1f_%.1f' % (s_[0], s_[1])
+                #         if s_Index in V:
+                #             val += p * V[s_Index]
+                #         else:
+                #             print s_Index
+                #     s_val = max(s_val, val)
+                #
+                r = 0
+                if abs(s[0]) <= 1 and abs(s[1]) <= 1:
+                    r = 1
+                #
+                # V_[sIndex] = r + gamma * s_val
+
+                V_[sIndex] = r + gamma * max(
+                    [sum([p * V['%.1f_%.1f' % (s_[0], s_[1])] for (p, s_) in self.__exact_transition(s, a)])
+                     for a in self.get_all_actions()])
+
+                delta = max(delta, abs(V_[sIndex] - V[sIndex]))
+
+            print it, delta
 
             if delta < eps:
                 return V
 
-    def __plot(self, sampled_state, c='b'):
+    def __exact_transition(self, s, a):
+        p = 1
+        s_ = self.toroidal_state(s + a)
+        return [(p, s_)]
+
+    def __plot(self, sampled_state, c='b', cmap='hot'):
         x, y = np.meshgrid(np.linspace(-5, 5), np.linspace(-5, 5))
         z = []
         for i in range(len(x[0])):
@@ -294,8 +343,8 @@ class World():
                 z.append(self.model.predict(pairwise))
 
         z = np.array(z).reshape(x.shape)
-        # self.ax.plot_surface(x, y, z, cmap='hot')
-        self.ax.scatter(sampled_state[:, 0], sampled_state[:, 1], self.model.predict(sampled_state), c=c)
+        self.ax.plot_surface(x, y, z, cmap=cmap, alpha=0.5)
+        # self.ax.scatter(sampled_state[:, 0], sampled_state[:, 1], self.model.predict(sampled_state), c=c)
         # self.ax.plot_wireframe(x, y, z)
 
 
@@ -315,6 +364,7 @@ if __name__ == '__main__':
         print ' state:              ', world.get_predator_state()
         print ''
 
-    world.fitted_value_iteration(n_iter=5, verbose=True, n_state=100, n_sample=100, gamma=0.1)
+    # world.fitted_value_iteration(n_iter=20, verbose=True, n_state=100, n_sample=100, gamma=0.1)
+    world.exact_value_iteration(n_iter=20, verbose=True, gamma=0.1)
 
     # print model.predict((x,y))
