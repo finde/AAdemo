@@ -5,6 +5,10 @@ from agent import Agent, Prey
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import SGDRegressor
 
+import time
+import datetime
+import cPickle
+
 __author__ = 'finde, arif'
 
 
@@ -101,11 +105,25 @@ class World():
     fitted value iteration
     """
 
-    def fitted_value_iteration(self, n_state=10, n_iter=100, n_sample=10, gamma=0.1, eps=1E-5, verbose=False):
+    def fitted_value_iteration(self, n_state=10, n_iter=100, n_sample=10, gamma=0.1, eps=1E-5, verbose=False, log=True):
         """
         planning using fitted value iteration
         based on Andrew Ng
         """
+        np.random.seed()
+        ts = time.time()
+        st = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d_%H%M%S')
+        log_filename = 'fitted_vi_' + st + '__' + str(np.random.uniform(0, 1000))
+
+        if log:
+            log_file = open(log_filename + '.log', 'w')
+            log_file.write('== Fitted value iterations ==\n')
+            log_file.write('\n')
+            log_file.write('n state         : %d \n' % n_sample)
+            log_file.write('max iteration   : %d \n' % n_iter)
+            log_file.write('gamma           : %d \n' % n_sample)
+            log_file.write('eps             : %d \n' % eps)
+            log_file.write('\n')
 
         print 'Fitted value iterations ...'
 
@@ -150,6 +168,9 @@ class World():
                 y_old = y_total
 
             if converge_counter >= 5:
+                if log:
+                    log_file.write('converged       : Yes at %d\n' % it)
+
                 print "converged at iteration %d" % it
                 break
 
@@ -157,7 +178,14 @@ class World():
             self.train_model(X, y)
 
         if it >= n_iter:
+            if log:
+                log_file.write('converged       : No at %d\n' % it)
+
             print "not converged"
+
+        if log:
+            log_file.write('y_total         : %f\n' % y_total)
+            cPickle.dump((y_total, self.model), open(log_filename + '.cp', 'w'))
 
         return self.model
 
@@ -167,6 +195,7 @@ class World():
         """
 
         # sample initial position for predator and prey
+        np.random.seed()
         x = np.random.uniform(0, self.width, (n_state, 2))
         y = np.random.uniform(0, self.height, (n_state, 2))
 
