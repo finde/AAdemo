@@ -156,13 +156,14 @@ class World():
         positions = self.__sample_position(n_state)
         X = np.zeros((n_state, 2))
         y = np.zeros(n_state)
+        v_old = np.zeros(n_state)
         it = 0
 
         while it < n_iter:
 
             it += 1
             delta = 0
-            y_old = y.copy()
+            # y_old = y.copy()
 
             # expectation
             for i in xrange(0, n_state):
@@ -178,7 +179,16 @@ class World():
                     approximated_value[idx] = self.__approximate_value(next_states, gamma)
 
                 y[i] = np.max(approximated_value)
-                delta = max(delta, abs(y_old[i] - y[i]))
+
+            # maximization
+            self.train_model(X, y)
+
+            v_new = self.model.predict(X)
+
+            for i in xrange(0, n_state):
+                delta = max(delta, abs(v_old[i] - v_new[i]))
+
+            v_old = v_new
 
             if verbose or it % 100 == 0:
                 if log:
@@ -187,7 +197,8 @@ class World():
                 print y
             log_file.write('\n')
 
-            if delta < eps * 2 * gamma / ((1 - gamma) ** 2):
+            # if delta < eps * 2 * gamma / ((1 - gamma) ** 2):
+            if delta < eps:
                 if log:
                     log_file.write('\nconverged       : Yes at %d\n' % it)
                     log_file.write('\n== Ys ==\n')
@@ -202,8 +213,6 @@ class World():
                 print "Xs", X
                 break
 
-            # maximization
-            self.train_model(X, y)
 
             if it == 1:
                 self.__plot(X, 'g')
